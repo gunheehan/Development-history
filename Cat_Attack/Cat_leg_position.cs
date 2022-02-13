@@ -41,9 +41,6 @@ namespace cat
         [HideInInspector]
         public int damage_count;
 
-        [Header("Misson Clear After Destroy List")]
-        public GameObject[] Off_List;
-
         private List<GameObject> create_item = new List<GameObject>();
 
         PlayerTeleport Teleport; // 텔러포트 기능을 정지할 스크립트
@@ -92,16 +89,16 @@ namespace cat
                 Attack_Modern_face();
                 yield return new WaitForSeconds(3f);
                 Attack_Modern_arm();
-                yield return new WaitForSeconds(0.8f);
-                attack_item_move(10.0f);
+                yield return new WaitForSeconds(0.5f);
                 attack_modern_zone.enabled = true;
+                yield return new WaitForSeconds(0.3f);
                 mordern_hit_event.SetActive(true);
+                attack_item_move(10f);
                 yield return new WaitForSeconds(2f);
                 mordern_hit_event.SetActive(false);
                 attack_modern_face.enabled = false;
                 attack_modern_arm.enabled = false;
                 attack_modern_zone.enabled = false;
-                print(damage_count);
             }
             else if (damage_count >= 3) // 강력한 공격
             {
@@ -115,9 +112,10 @@ namespace cat
                 yield return new WaitForSeconds(2f);
                 Attack_Angry_arm();
                 yield return new WaitForSeconds(0.5f);
-                attack_item_move(50.0f);
                 attack_modern_zone.enabled = true;
+                yield return new WaitForSeconds(0.8f);
                 angry_hit_event.SetActive(true);
+                attack_item_move(30f);
                 yield return new WaitForSeconds(3f);
                 angry_hit_event.SetActive(false);
                 attack_angry_face.enabled = false;
@@ -133,10 +131,9 @@ namespace cat
                 angry_cat_face.SetActive(true);
                 Attack_Angry_face();
                 yield return new WaitForSeconds(2f);
-                Misson_Clear();
+                // 미션 종료후 씬 전환 코드 작성 위치
             }
 
-            print(item_attack_count);
             StartCoroutine(attack_ready());
         }
 
@@ -175,7 +172,6 @@ namespace cat
         {
             foreach (GameObject o in drop_attack_item)
             {
-                int random_move = Random.Range(1, 3) * 10;
                 o.transform.position = new Vector3(o.transform.position.x, o.transform.position.y, (Mathf.Lerp(o.transform.position.z, transform.position.z - move, Time.deltaTime * 10f)));
             }
         }
@@ -216,12 +212,6 @@ namespace cat
             Vector3 spawnPos = new Vector3(posX, posY, posZ);
 
             return spawnPos;
-        }
-
-        void Misson_Clear()
-        {
-            foreach (GameObject list in Off_List)
-                Destroy(list.gameObject);
-        }     
+        }   
     }
 }

@@ -23,6 +23,5 @@ public class hit_particle : MonoBehaviour
         partSystem.enableEmission = true;
         yield return new WaitForSeconds(1.0f);
         partSystem.enableEmission = false;
-        Destroy(gameObject);
     }
 }

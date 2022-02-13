@@ -15,7 +15,6 @@ public class attact_count : MonoBehaviour
     {
         if (other.tag == "Cat_Attack_small")
         {
-            Destroy(other.gameObject);
             count.damage_count++;
             print("body damage : " + count.damage_count);
         }

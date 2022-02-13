@@ -1,21 +1,35 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using BNG;
 
 public class Rain_warnning : MonoBehaviour
 {
+    public SmoothLocomotion player;
     MeshRenderer rain_render;
     bool isIncrease;
     float speed = 1;
+    float debuff_speed;
+    float origin_speed;
 
-    void OnEnable()
+    private void Awake()
     {
         rain_render = GetComponent<MeshRenderer>();
+        origin_speed = player.MovementSpeed;
+        debuff_speed = player.MovementSpeed / 2;
+    }
+    void OnEnable()
+    {
         Warnning_Enable(); //Blink 켜기
         isIncrease = true;
         Material m = rain_render.material; // Blink 기능을 할 메터리얼 값 연결
-        m.color = new Color(m.color.r, m.color.g, m.color.b, 0); // Color 초기값 설정
-        //StartCoroutine(Disable_time());
+        m.color = new Color(m.color.r, m.color.g, m.color.b, 0f); // Color 초기값 설정
+    }
+
+    private void OnDisable()
+    {
+        player.MovementSpeed = debuff_speed;
+        Warning_Disable();
     }
 
     public void Warnning_Enable()
@@ -26,18 +40,8 @@ public class Rain_warnning : MonoBehaviour
     public void Warning_Disable()
     {
         rain_render.enabled = false; // 렌더를 켜서 Blink 끄기
-        StartCoroutine(Dis_GameObject());
     }
-    IEnumerator Dis_GameObject()
-    {
-        yield return new WaitForSeconds(1.0f);
-        gameObject.SetActive(false);
-    }
-    IEnumerator Disable_time()
-    {
-        yield return new WaitForSeconds(5.0f);
-        Warning_Disable();
-    }
+   
     void Update()
     {
         Material m = rain_render.material;
@@ -45,9 +49,9 @@ public class Rain_warnning : MonoBehaviour
         if (isIncrease) // alpha 값이 증가중
         {
             // alpha 값이 0.04까지 speed 값만큼의 속도로 커짐
-            m.color = Color.Lerp(m.color, new Color(m.color.r, m.color.g, m.color.b, 0.7f), Time.deltaTime * speed);
+            m.color = Color.Lerp(m.color, new Color(m.color.r, m.color.g, m.color.b, 0.1f), Time.deltaTime * speed);
             // 만약 aplha값이 0.039보다 크다면 감소 시킴
-            if (m.color.a > 0.69f) isIncrease = false;
+            if (m.color.a > 0.099f) isIncrease = false;
         }
         else          // alpha 값이 감소중
         {
@@ -60,7 +64,16 @@ public class Rain_warnning : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.tag == "Player")
-            print("비바람 몰아치는 밤에~");
+        if(other.tag == "Player")
+        {
+            StartCoroutine(Rain_Debuff());
+        }
+    }
+
+    IEnumerator Rain_Debuff()
+    {
+        player.MovementSpeed = debuff_speed;
+        yield return new WaitForSeconds(3.0f);
+        player.MovementSpeed = origin_speed;
     }
 }
