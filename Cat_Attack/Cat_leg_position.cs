@@ -8,38 +8,58 @@ namespace cat
     public class Cat_leg_position : MonoBehaviour
     {
         [Header("Cat Modern Attack")]
+        [Tooltip("cat main object")]
         public GameObject mordern_cat_face;
+        [Tooltip("cat arm main object")]
         public GameObject mordern_cat_arm;
+        [Tooltip("arm -> smoke")]
         public GameObject mordern_hit_event;
+        [Tooltip("cat main object animator")]
         public Animator attack_modern_face;
+        [Tooltip("cat arm object animator")]
         public Animator attack_modern_arm;
+        [Tooltip("cat arm attack collider zone")]
         public Collider attack_modern_zone;
 
 
         [Header("Cat Angry Attack")]
+        [Tooltip("cat main object")]
         public GameObject angry_cat_face;
+        [Tooltip("cat arm main object")]
         public GameObject angry_cat_arm;
+        [Tooltip("arm -> smoke")]
         public GameObject angry_hit_event;
+        [Tooltip("cat main object animator")]
         public Animator attack_angry_face;
+        [Tooltip("cat arm object animator")]
         public Animator attack_angry_arm;
+        [Tooltip("cat arm attack collider zone")]
         public Collider attack_angry_zone;
 
         [HideInInspector]
         public int item_attack_count;
 
         [Header("Cat Attack Item")] // 큰 타격을 줄 오브젝트
+        [Tooltip("cat main attack object. move auto")]
         public GameObject[] drop_attack_item;
 
         [Header("Drop Item Prefab")] // 잡아서 던질 수 있는 오브젝트
+        [Tooltip("Grabble item object")]
         public GameObject[] Drop_Prefab; // 생성할 오브젝트 리스트
 
         [Header("Max Instantiate Legth")]
+        [Tooltip("Grab Item Instantiate Setting")]
         public int max_intantiate = 25;
+        [Tooltip("Grab Item Instantiate Area. ex) Box Collider")]
         public BoxCollider area; // 생성될 위치 범위
         private int count; // 생성할 오브젝트 개수
 
         [HideInInspector]
         public int damage_count;
+
+        [Header("Misson Clear After Off List")]
+        [Tooltip("Misson clear after Disable Object List")]
+        public GameObject[] Off_List;
 
         private List<GameObject> create_item = new List<GameObject>();
 
@@ -131,8 +151,11 @@ namespace cat
                 angry_cat_face.SetActive(true);
                 Attack_Angry_face();
                 yield return new WaitForSeconds(2f);
-                // 미션 종료후 씬 전환 코드 작성 위치
+                Misson_Clear();
             }
+
+            print(item_attack_count);
+
 
             StartCoroutine(attack_ready());
         }
@@ -212,6 +235,12 @@ namespace cat
             Vector3 spawnPos = new Vector3(posX, posY, posZ);
 
             return spawnPos;
-        }   
+        }
+
+        void Misson_Clear()
+        {
+            foreach (GameObject list in Off_List)
+                Destroy(list.gameObject);
+        }     
     }
 }

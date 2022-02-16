@@ -10,13 +10,22 @@ public class DisplayInventory : MonoBehaviour
 {
     public MouseItem mouseItem = new MouseItem();
 
+    [Header("Inventory")]
+    [Tooltip("Inventory Prefab")]
     public GameObject inventoryPrefab;
+    [Tooltip("Inventory Database")]
     public InventoryObject inventory;
+    [Tooltip("Left hand position")]
     public Transform left_hand;
+    [Tooltip("Inventory Prefab Instantiate Start position X")]
     public int X_START;
+    [Tooltip("Inventory Prefab Instantiate Start position Y")]
     public int Y_START;
+    [Tooltip("Inventory Prefab Interval X")]
     public int X_SPACE_BETWEEN_ITEM;
+    [Tooltip("Inventory Interval Column")]
     public int NUMBER_OF_COLUMN;
+    [Tooltip("Inventory Prefab Interval Y")]
     public int Y_SPACE_BETWEEN_ITEMS;
 
     public GroundItem[] Key_Item;
