@@ -6,8 +6,6 @@ public class Release_Parent : MonoBehaviour
 {
     private void OnTriggerEnter(Collider other)
     {
-        print("Ãæµ¹");
         other.transform.parent = null;
-        //
     }
 }
