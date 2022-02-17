@@ -14,19 +14,19 @@ public class Web_rope : MonoBehaviour
     public InputBridge Player_Input;
 
     [Header("Spider Setting")]
-    [Tooltip("°Å¹Ì ÃÖ»óÀ§ ¿ÀºêÁ§Æ®")]
+    [Tooltip("ê±°ë¯¸ ìµœìƒìœ„ ì˜¤ë¸Œì íŠ¸")]
     public GameObject Spyder_body; // Object main body
 
     [Header("Player Controller")]
-    [Tooltip("°Å¹Ì°¡ µû¶ó°¥ Å¸ÄÏ À§Ä¡")]
+    [Tooltip("ê±°ë¯¸ê°€ ë”°ë¼ê°ˆ íƒ€ì¼“ ìœ„ì¹˜")]
     public Transform target;
 
 
     [Header("Rotation Speed")]
-    [Tooltip("°Å¹Ì°¡ Å¸ÄÏÀ» ¹Ù¶óº¸±â À§ÇØ µµ´Â ¼Óµµ")]
+    [Tooltip("ê±°ë¯¸ê°€ íƒ€ì¼“ì„ ë°”ë¼ë³´ê¸° ìœ„í•´ ë„ëŠ” ì†ë„")]
     public float r_speed = 0.1f;
     [Header("Move Speed")]
-    [Tooltip("°Å¹Ì°¡ Å¸ÄÏÀ¸·Î ÀÌµ¿ÇÏ´Â ¼Óµµ")]
+    [Tooltip("ê±°ë¯¸ê°€ íƒ€ì¼“ìœ¼ë¡œ ì´ë™í•˜ëŠ” ì†ë„")]
     public float m_speed;
 
     bool rotating = false;
@@ -59,9 +59,6 @@ public class Web_rope : MonoBehaviour
         }
         if (Input.GetKeyDown("space"))
             walking = true;
-
-        //if (Player_Input.RightGrip != 0)
-            //walking = true;
     }
 
     private void OnTriggerEnter(Collider other)
@@ -74,17 +71,7 @@ public class Web_rope : MonoBehaviour
         }
         else if (Player_Input.RightGrip == 1 && other.tag == "Player")
         {
-            print("°¡Áî¾Æ");
             walking = true;
         }
     }
-
-    /*private void OnTriggerExit(Collider other)
-    {
-        if(other.tag=="Player")
-        {
-            print("¿¡ÀÌ¼³¸¶");
-            walking = false;
-        }
-    }*/
 }
