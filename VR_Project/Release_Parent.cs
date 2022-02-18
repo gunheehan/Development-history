@@ -6,6 +6,7 @@ public class Release_Parent : MonoBehaviour
 {
     private void OnTriggerEnter(Collider other)
     {
-        other.transform.parent = null;
+        if(other.tag != "Particle")
+            other.transform.parent = null;
     }
 }
