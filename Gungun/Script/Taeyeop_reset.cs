@@ -7,11 +7,6 @@ public class Taeyeop_reset : MonoBehaviour
     public GameObject GFX;
     public GameObject Handle;
 
-    private Quaternion GFX_local_original;
-    private Quaternion Handle_local_original;
-    private Quaternion GFX_world_original;
-    private Quaternion Handle_world_original;
-
     private void OnEnable()
     {
         GFX.SetActive(true);
