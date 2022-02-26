@@ -10,7 +10,8 @@ public class Doll_Touch_rotation : MonoBehaviour
 
     private void Start()
     {
-        stand.Play("Base Layer.Armature|Armature|mixamo_com|Help_stand", 0, 0.25f);    }
+        stand.Play("Base Layer.Rosie|stand_up", 0, 0.25f);
+    }
 
     public void right_rotate()
     {

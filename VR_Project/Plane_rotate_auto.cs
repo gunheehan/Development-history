@@ -18,6 +18,7 @@ public class Plane_rotate_auto : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        other.transform.parent = gameObject.transform;
+        if (other.tag != "Particle")
+            other.transform.parent = gameObject.transform;
     }
 }
