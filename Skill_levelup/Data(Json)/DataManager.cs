@@ -16,6 +16,7 @@ public class StatData
 {
     public List<Stat> stats = new List<Stat>();
 }
+
 public class DataManager
 {
     public void init()
