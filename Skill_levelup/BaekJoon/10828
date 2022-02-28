@@ -1,0 +1,55 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+namespace Algorithm
+{
+    class Programing
+    {
+        static void Main()
+        {
+            int count = int.Parse(Console.ReadLine());
+            Stack<int> stack = new Stack<int>();
+
+            string[] input;
+
+            for (int i = 0; i < count; i++)
+            {
+                input = Console.ReadLine().Split();
+
+                switch (input[0])
+                {
+                    case "push":
+                        if (input.Length <= 1)
+                        {
+                            Console.WriteLine("잘못된 입력입니다.");
+                            break;
+                        }
+                        stack.Push(int.Parse(input[1]));
+                        break;
+
+                    case "pop":
+                        if (stack.Count != 0)
+                            Console.WriteLine("Pop : " + stack.Pop());
+                        else
+                            Console.WriteLine("Stack is null");
+                        break;
+
+                    case "size":
+                        Console.WriteLine("Size : " + stack.Count);
+                        break;
+
+                    case "empty":
+                        if (stack.Count == 0)
+                            Console.WriteLine("Empty : True");
+                        else
+                            Console.WriteLine("Empty : False");
+                        break;
+
+                    case "top":
+                        Console.WriteLine("Top : " + stack.Peek());
+                        break;
+                }
+            }
+        }
+    }
+}
