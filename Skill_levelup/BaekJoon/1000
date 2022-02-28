@@ -1,0 +1,19 @@
+using System;
+
+namespace Algorithm
+{
+    class Program
+    {
+        static void Main()
+        {
+            Console.WriteLine("A와 B의 값을 입력하시오.");
+            string s = Console.ReadLine();
+            string[] ss = s.Split();
+            int a = int.Parse(ss[0]);
+            int b = int.Parse(ss[1]);
+            int c = a + b;
+            Console.WriteLine(c);
+        }
+
+    }
+}
