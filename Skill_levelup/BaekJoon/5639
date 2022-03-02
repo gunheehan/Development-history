@@ -1,0 +1,76 @@
+using System;
+
+namespace Algorithm
+{
+    public class Node<T>
+    {
+        public int data = 0;
+        public Node<T> left = null;
+        public Node<T> right = null;
+
+        public void Node_insert(Node<T> Root, int key)
+        {
+            if (Root == null || Root.data == 0)
+            {
+                Root.data = key;
+            }
+
+            else
+            {
+                while (true)
+                {
+                    if (key < Root.data)
+                    {
+                        if (Root.left == null)
+                        {
+                            Root.left = new Node<T>();
+                            Root.left.data = key;
+                            break;
+                        }
+                        else
+                            Root = Root.left;
+                    }
+                    else if (key > Root.data)
+                    {
+                        if (Root.right == null)
+                        {
+                            Root.right = new Node<T>();
+                            Root.right.data = key;
+                            break;
+                        }
+                        else
+                            Root = Root.right;
+                    }
+                    else
+                        break;
+                }
+
+            }
+        }
+        public void pre(Node<T> node)
+        {
+            if (node != null)
+            {
+                pre(node.left);
+                pre(node.right);
+                Console.WriteLine(node.data);
+            }
+        }
+    }
+
+    class Programming
+    {
+        static void Main()
+        {
+            Node<int> tree = new Node<int>();
+
+            string[] input = Console.ReadLine().Split();
+            for(int i = 0; i < input.Length; i++)
+            {
+                tree.Node_insert(tree, int.Parse(input[i]));
+            }
+
+            tree.pre(tree);
+        }
+    }
+}
