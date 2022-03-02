@@ -64,10 +64,19 @@ namespace Algorithm
         {
             Node<int> tree = new Node<int>();
 
-            string[] input = Console.ReadLine().Split();
-            for(int i = 0; i < input.Length; i++)
+            string input;
+            while (true)
             {
-                tree.Node_insert(tree, int.Parse(input[i]));
+                try
+                {
+                    input = Console.ReadLine();
+                    tree.Node_insert(tree, int.Parse(input));
+                }
+
+                catch(Exception ex)
+                {
+                    break;
+                }
             }
 
             tree.pre(tree);
