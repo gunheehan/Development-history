@@ -1,0 +1,32 @@
+using System;
+namespace Algorithm
+{
+    class Programming
+    {
+        static void Main()
+        {
+            int num;
+            int pibo;
+            int[] pibo_array = new int[40];
+            pibo_array[0] = 0;
+            pibo_array[1] = 1;
+            pibo_array[2] = 1;
+            for (int i = 3; i < 40; i++)
+                pibo_array[i] = pibo_array[i - 1] + pibo_array[i - 2];
+
+            num = int.Parse(Console.ReadLine());
+
+            for(int i = 0; i<num; i++)
+            {
+                pibo = int.Parse(Console.ReadLine());
+                if (pibo == 0)
+                    Console.WriteLine("1 0");
+                else if (pibo == 1)
+                    Console.WriteLine("0 1");
+                else
+                    Console.WriteLine(pibo_array[pibo - 1] + " " + pibo_array[pibo]);
+            }
+
+        }
+    }
+}
