@@ -1,0 +1,36 @@
+using System;
+namespace Algorithm
+{
+    class Programming
+    {
+        static void Main()
+        {
+            int num;
+            int fibonacci;
+            int[,] fibonacci_count = new int[41,2];
+
+            fibonacci_count[0, 0] = 1;
+            fibonacci_count[0, 1] = 0;
+            fibonacci_count[1, 0] = 0;
+            fibonacci_count[1, 1] = 1;
+            for (int i = 2; i < 41; i++)
+            {
+                fibonacci_count[i, 0] = fibonacci_count[i - 1, 0] + fibonacci_count[i - 2, 0];
+                fibonacci_count[i, 1] = fibonacci_count[i - 1, 1] + fibonacci_count[i - 2, 1];
+            }
+            num = int.Parse(Console.ReadLine());
+
+            for(int i = 0; i<num; i++)
+            {
+                fibonacci = int.Parse(Console.ReadLine());
+                if (fibonacci == 0)
+                    Console.WriteLine("1 0");
+                else if (fibonacci == 1)
+                    Console.WriteLine("0 1");
+                else
+                    Console.WriteLine(fibonacci_count[fibonacci, 0] + " " + fibonacci_count[fibonacci, 1]);
+            }
+
+        }
+    }
+}
