@@ -1,0 +1,33 @@
+using System;
+
+namespace Program
+{
+    class Programming
+    {
+        static int factorial(int input)
+        {
+            int factorial_result = 1;
+            if (input == 0)
+                return 1;
+            else
+            {
+                for(int i = 1; i<=input; i++)
+                {
+                    factorial_result *= i;
+                }
+                return factorial_result;
+            }
+
+        }
+        static void Main()
+        {
+            int input = 0;
+            int result = 0;
+
+            input = int.Parse(Console.ReadLine());
+
+            result = factorial(input);
+            Console.WriteLine(result);
+        }
+    }
+}
