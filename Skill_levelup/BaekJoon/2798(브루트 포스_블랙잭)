@@ -1,0 +1,61 @@
+using System;
+
+namespace Program
+{
+    class Programming
+    {
+        static int[] Bubble(int[] bubble_list)
+        {
+            for (int i = 0; i < bubble_list.Length; i++)
+            {
+                for (int j = i + 1; j < bubble_list.Length; j++)
+                {
+                    int temp;
+
+                    if (bubble_list[i] > bubble_list[j] && i != j)
+                    {
+                        temp = bubble_list[j];
+                        bubble_list[j] = bubble_list[i];
+                        bubble_list[i] = temp;
+                    }
+                }
+            }
+            return bubble_list;
+        }
+
+        static void Result_value(int[] number, int Max_value)
+        {
+            int result = 0;
+            for (int i = number.Length -1; i >= 2; i-- )
+            {
+                for (int j = i - 1; j >= 1; j--)
+                {
+                    for (int t = j - 1; t >= 0; t--)
+                    {
+                        int middle = number[i] + number[j] + number[t];
+                        if (middle <= Max_value)
+                        {
+                            if (middle > result)
+                                result = middle;
+                        }
+                    }
+                }
+            }
+            Console.WriteLine(result);
+        }
+        static void Main()
+        {
+            string[] input = Console.ReadLine().Split();
+            string[] number_input = Console.ReadLine().Split();
+            int[] number = new int[int.Parse(input[0])];
+
+            for (int i = 0; i < int.Parse(input[0]); i++)
+            {
+                number[i] = int.Parse(number_input[i]);
+            }
+
+            number = Bubble(number);
+            Result_value(number, int.Parse(input[1]));
+        }
+    }
+}
