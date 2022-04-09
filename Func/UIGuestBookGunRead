@@ -1,0 +1,40 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+using System.IO;
+
+public class UIGuestBookGunRead : AddressableUI
+{
+    [SerializeField] Text GuestBookText;
+    public Guestlist ReadData = new Guestlist();
+    public short Guestlist_index = 0;
+    public int list_yvalue = 0;
+
+    private void OnEnable()
+    {
+        string Jsonstring = File.ReadAllText(Application.dataPath + "/GuestBookResourse/GuestBookData.json");
+
+        ReadData = JsonUtility.FromJson<Guestlist>(Jsonstring);
+
+        for (int i = Guestlist_index; i < ReadData.listdata.Count; i++)
+        {
+            var index = Instantiate(GuestBookText, new Vector3(0, list_yvalue, 0), Quaternion.identity);
+            index.transform.SetParent(GameObject.Find("Content").transform);
+            index.text = "ID : " + ReadData.listdata[i].ID + " " + ReadData.listdata[i].GuestBookText + ReadData.listdata[i].Time;
+            list_yvalue -= 200;
+            Guestlist_index++;
+        }
+    }
+
+    public void OnClickClose()
+    {
+        BackScreen();
+    }
+
+    void BackScreen()
+    {
+        CloseUI();
+        UIManager.Instance.OpenUI<UIGuestBookGun>();
+    }
+}
