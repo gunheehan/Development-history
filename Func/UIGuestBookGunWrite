@@ -1,0 +1,56 @@
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+using System.IO;
+
+public class UIGuestBookGunWrite : AddressableUI
+{
+    [SerializeField] private InputField inputfield;
+    [SerializeField] public Guestlist list = new Guestlist();
+
+    public void OnClickSubmit()
+    {
+        SendGuestBook();
+    }
+
+    void SendGuestBook()
+    {
+        string key = PlayerManager.PhotonPlayer.NickName; // 키 데이터로 사용될 현재 접속한 사용자 이름
+
+        PlayerPrefs.SetString(key, inputfield.text);
+
+        Debug.Log("데이터 키 : " + key + "\n 데이터 저장 내용 : " + inputfield.text);
+        
+        list.listdata.Add(new GuestBookData(PlayerManager.PhotonPlayer.NickName, inputfield.text, System.DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss")));
+        SaveData();
+        CloseUI();
+        inputfield.text = "";
+
+        UIManager.Instance.OpenUI<UIGuestBookGun>();
+    }
+
+    public void SaveData()
+    {
+        Debug.Log(UnityEngine.JsonUtility.ToJson(list));        
+        File.WriteAllText(Application.dataPath + "/GuestBookResourse/GuestBookData.json", UnityEngine.JsonUtility.ToJson(list));
+    }
+}
+[System.Serializable]
+public class Guestlist
+{
+    public List<GuestBookData> listdata;
+}
+[System.Serializable]
+public class GuestBookData
+{
+    public string ID;
+    public string GuestBookText;
+    public string Time;
+
+    public GuestBookData(string _id, string _guestbooktext, string time)
+    {
+        ID = _id;
+        GuestBookText = _guestbooktext;
+        Time = time;
+    }
+}
