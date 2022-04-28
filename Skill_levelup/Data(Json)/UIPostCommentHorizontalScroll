@@ -1,0 +1,70 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
+
+public class UIPostCommentHorizontalScroll : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
+{
+    public Scrollbar scrollbar;
+
+    float[] object_range = new float[2];
+    float reference_value, curentPos, targetPos;
+    int targetIndex;
+    bool isDrag;
+    public void OnBeginDrag(PointerEventData eventData)
+    {
+        curentPos = SetPos();
+    }
+
+    public void OnDrag(PointerEventData eventData)
+    {
+        isDrag = true;
+    }
+
+    public void OnEndDrag(PointerEventData eventData)
+    {
+        isDrag = false;
+
+        targetPos = SetPos();
+
+        if(curentPos == targetPos)
+        {
+            if (eventData.delta.x > 20f)
+            {
+                --targetIndex;
+                targetPos = curentPos - reference_value;
+            }
+        }
+
+        else if(eventData.delta.x < -20f)
+        {
+            ++targetIndex;
+            targetPos = curentPos + reference_value;
+        }
+    }
+
+    float SetPos()
+    {
+        for (int i = 0; i < object_range.Length; i++)
+            if (scrollbar.value < object_range[i] + reference_value * 0.5f && scrollbar.value > object_range[i] - reference_value * 0.5f)
+            {
+                targetIndex = i;
+                 return object_range[i];
+            }
+        return 0;
+    }
+    // Start is called before the first frame update
+    void Start()
+    {
+        reference_value = 1f / (object_range.Length - 1);
+        for (int i = 0; i < object_range.Length; i++)
+            object_range[i] = reference_value * i;
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        if(!isDrag) scrollbar.value = Mathf.Lerp(scrollbar.value, targetPos, 0.1f);
+    }
+}
