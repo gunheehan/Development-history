@@ -1,0 +1,129 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using UnityEngine.UI;
+
+public class UIPostReCommentForm : MonoBehaviour
+{
+    private UIPostCommentForm commentform;
+    [SerializeField] private Button Btn_profile;
+    [SerializeField] private Button Btn_nickname;
+    [SerializeField] private Button Btn_like;
+    [SerializeField] private Button Btn_unlike;
+    [SerializeField] private Button Btn_recomment;
+    [SerializeField] private Button Btn_Report;
+    [SerializeField] private Button Btn_Delete;
+
+    [SerializeField] private Image img_profile;
+    [SerializeField] private Text nickname;
+    [SerializeField] private Text animal_nickname;
+    [SerializeField] private Text time;
+    [SerializeField] private Text comment;
+    [SerializeField] private Text like;
+    [SerializeField] private InputField contents;
+
+
+    private string username;
+    private float uploadtime;
+    private short like_count;
+
+    public void Start()
+    {
+        Btn_unlike.gameObject.SetActive(false);
+        SetLitsener();
+    }
+
+    public void SetCommentData(CommentInfo info, UIPostCommentForm form)
+    {
+        nickname.text = info.nickname;
+        animal_nickname.text = info.animal_nickname;
+        time.text = ElapsedTime(info.uploadtime) + "전";
+        comment.text = info.comment;
+        like.text = "좋아요 " + info.like_count.ToString();
+
+        commentform = form;
+        username = info.nickname;
+        uploadtime = info.uploadtime;
+        like_count = info.like_count;
+    }
+
+    private string ElapsedTime(float time)
+    {
+        int[] clock = new int[3];
+        time -= float.Parse(DateTime.Now.ToString("HHmmss"));
+        time *= -1;
+        clock[0] = ((int)time / 3600);
+        clock[1] = ((int)time / 60 % 60);
+        clock[2] = ((int)time % 60);
+
+        if (clock[0] != 0)
+        {
+            if (clock[0] >= 24)
+                return clock[0] / 24 + "일";
+            else
+                return clock[0] + "시간";
+        }
+        else if (clock[1] != 0)
+        {
+            return clock[1] + "분";
+        }
+        else
+            return clock[2] + "초";
+    }
+
+    private void SetLitsener()
+    {
+        Btn_profile.onClick.AddListener(OnClickProfileORNickname);
+        Btn_nickname.onClick.AddListener(OnClickProfileORNickname);
+        Btn_like.onClick.AddListener(OnClickLike);
+        Btn_unlike.onClick.AddListener(OnClickUnLike);
+        Btn_recomment.onClick.AddListener(OnClickReComment);
+        Btn_Report.onClick.AddListener(OnClickReport);
+        Btn_Delete.onClick.AddListener(OnClickDelete);
+    }
+
+    private void OnClickReComment()
+    {
+        contents.text = "@" + username + " ";
+        commentform.SetRecommment();
+    }
+    private void OnClickProfileORNickname()
+    {
+        // 다이어리 페이지 출력 연결
+        Debug.Log("다이어리");
+    }
+
+    private void OnClickLike()
+    {
+        // 클릭시 like 데이터 ++ 및 서버로 변경된 데이터 전송
+        like_count++;
+        like.text = "좋아요 " + like_count.ToString();
+        Btn_unlike.gameObject.SetActive(true);
+        Btn_like.gameObject.SetActive(false);
+    }
+    private void OnClickUnLike()
+    {
+        // 클릭시 like 데이터 -- 및 서버로 변경된 데이터 전송
+        like_count--;
+        like.text = "좋아요 " + like_count.ToString();
+
+        Btn_like.gameObject.SetActive(true);
+        Btn_unlike.gameObject.SetActive(false);
+    }
+    private void OnClickReport()
+    {
+        // 신고하기 창 활성화
+    }
+    private void OnClickDelete()
+    {
+        comment.text = "삭제된 답글입니다.";
+        Btn_like.gameObject.SetActive(false);
+        Btn_unlike.gameObject.SetActive(false);
+        like.gameObject.SetActive(false);
+        Btn_recomment.gameObject.SetActive(false);
+        Btn_Delete.gameObject.SetActive(false);
+        // 관리자가 클릭할 경우 "관리자가 삭제한 답글입니다." 표시
+    }
+}
