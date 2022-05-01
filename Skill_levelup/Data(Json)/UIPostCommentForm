@@ -5,59 +5,78 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class UIPostCommentForm : MonoBehaviour
+public class CommentItemForm : MonoBehaviour
 {
-    [SerializeField] private UIPostComment postcommentmanagement;
+    [SerializeField] private UIPostComment RootCommentItemManagement;
+    [SerializeField] private HorizontalLayoutGroup HorizontalPadding;
     [SerializeField] private Button Btn_profile;
     [SerializeField] private Button Btn_nickname;
-    [SerializeField] private Button Btn_recomment;
+    [SerializeField] private Button Btn_writerecomment;
     [SerializeField] private Button Btn_like;
     [SerializeField] private Button Btn_unlike;
     [SerializeField] private Button Btn_express_answer;
     [SerializeField] private Button Btn_blind_anser;
     [SerializeField] private Button Btn_Report;
     [SerializeField] private Button Btn_Delete;
+    [SerializeField] private GameObject Object_Recomment_Count;
 
-    [SerializeField] private Image img_profile;
     [SerializeField] private Text nickname;
     [SerializeField] private Text animal_nickname;
-    [SerializeField] private Text time;
+    [SerializeField] private Text upload_time;
     [SerializeField] private Text comment;
-    [SerializeField] private Text like;
-    [SerializeField] private Text comment_count;
+    [SerializeField] private Text like_Text;
+    [SerializeField] private Text writerecomment;
     [SerializeField] private Text express_answer_list;
     [SerializeField] private InputField contents;
-    [SerializeField] private RectTransform RecommentParent;
 
-    [SerializeField] private GameObject RecommentPrefab;
+    int recomment_count;
 
-    private string username;
-    private float uploadtime;
+    CommentInfo thiscomment;
+    private int parent_comment_ID = 0;
     private short like_count;
-    private bool state = true;
+    private bool recommentstate = false;
+    public bool recommentactivestate = false;
 
-    List<CommentInfo> recomment_list;
-    List<GameObject> recomment_object_list = new List<GameObject>(); // 댓글 오브젝트를 관리할 변수
     public void Start()
     {
-        Btn_unlike.gameObject.SetActive(false);
+        Btn_like.gameObject.SetActive(false);
         Btn_express_answer.gameObject.SetActive(false);
         Btn_blind_anser.gameObject.SetActive(false);
         SetLitsener();
     }
-
-    public void SetCommentData(CommentInfo info, Dictionary<string, List<CommentInfo>> recommentinfo = null)
+    private void SetLitsener()
     {
-        nickname.text = info.nickname;
-        animal_nickname.text = info.animal_nickname;
-        time.text = ElapsedTime(info.uploadtime) + "전";
+        Btn_profile.onClick.AddListener(OnClickProfileORNickname);
+        Btn_nickname.onClick.AddListener(OnClickProfileORNickname);
+        Btn_writerecomment.onClick.AddListener(OnClickWriteRecomment);
+        Btn_like.onClick.AddListener(OnClickLike);
+        Btn_unlike.onClick.AddListener(OnClickUnLike);
+        Btn_express_answer.onClick.AddListener(OnClickExpressAnswerList);
+        Btn_blind_anser.onClick.AddListener(OnClickBlindAnserList);
+        Btn_Report.onClick.AddListener(OnClickReport);
+        Btn_Delete.onClick.AddListener(OnClickDelete);
+    }
+    public void SetCommentData(CommentInfo info, int siblingindex = 0)
+    {
+        nickname.text = info.user_nickname;
+        upload_time.text = ElapsedTime(info.uploadtime) + "전";
         comment.text = info.comment;
-        like.text = "좋아요 " + info.like_count.ToString();
-        comment_count.text = "댓글쓰기";
+        writerecomment.text = "댓글쓰기";
+        HorizontalPadding.padding.left = 0;
+        if (info.bool_like)
+        {
+            Btn_like.gameObject.SetActive(true);
+            Btn_unlike.gameObject.SetActive(false);
+        }
 
-        username = info.nickname;
-        uploadtime = info.uploadtime;
-        like_count = info.like_count;
+        if(siblingindex != 0)
+        {
+            HorizontalPadding.padding.left += 50;
+            this.transform.SetSiblingIndex(++siblingindex);
+            Object_Recomment_Count.SetActive(false);
+            parent_comment_ID = info.top_comment_id;
+        }
+        thiscomment = info;
     }
 
     private string ElapsedTime(float time)
@@ -84,43 +103,36 @@ public class UIPostCommentForm : MonoBehaviour
             return clock[2] + "초";
     }
 
-    private void SetLitsener()
+    public void SetReCommentCount(int recomment_count)
     {
-        Btn_profile.onClick.AddListener(OnClickProfileORNickname);
-        Btn_nickname.onClick.AddListener(OnClickProfileORNickname);
-        Btn_recomment.onClick.AddListener(OnClickRecomment);
-        Btn_like.onClick.AddListener(OnClickLike);
-        Btn_unlike.onClick.AddListener(OnClickUnLike);
-        Btn_express_answer.onClick.AddListener(OnClickExpressAnswerList);
-        Btn_blind_anser.onClick.AddListener(OnClickBlindAnserList);
-        Btn_Report.onClick.AddListener(OnClickReport);
-        Btn_Delete.onClick.AddListener(OnClickDelete);
-    }
-
-    public void OnClickAddReComment()
-    {
-        CommentInfo newrecomment = new CommentInfo();
-        newrecomment.nickname = "고양이";
-        newrecomment.comment = contents.text;
-        newrecomment.uploadtime = float.Parse(DateTime.Now.ToString("HHmmss"));
-        UIPostReCommentForm newrecommented = Instantiate(RecommentPrefab,RecommentParent).GetComponent<UIPostReCommentForm>();
-        newrecommented.SetCommentData(newrecomment, this);
-        
-        recomment_object_list.Add(newrecommented.gameObject);
         if(Btn_express_answer.gameObject.activeSelf == false && Btn_blind_anser.gameObject.activeSelf == false)
         {
             Btn_express_answer.gameObject.SetActive(true);
-            express_answer_list.text = "... 답글" + recomment_object_list.Count.ToString() + "개 모두 보기";
+            express_answer_list.text = "... 답글" + recomment_count + "개 모두 보기";
         }
-        else if(Btn_express_answer.gameObject.activeSelf == true)
+        //else if(Btn_express_answer.gameObject.activeSelf == true)]
+        else
+            express_answer_list.text = "... 답글" + recomment_count + "개 모두 보기";
+
+        this.recomment_count = recomment_count;
+        contents.text = string.Empty;
+    }
+    /// <summary>
+    /// 
+    /// </summary>
+
+    public void SetRecommment()
+    {
+        if (recommentstate)
         {
-            express_answer_list.text = "... 답글" + recomment_object_list.Count.ToString() + "개 모두 보기";
+            contents.text = "@" + thiscomment.user_nickname + " ";
+            RootCommentItemManagement.comment_location_state = !recommentstate;
         }
         else
         {
-            newrecommented.gameObject.SetActive(true);
+            contents.text = string.Empty;
+            RootCommentItemManagement.comment_location_state = !recommentstate;
         }
-        contents.text = string.Empty;
     }
     private void OnClickProfileORNickname()
     {
@@ -129,59 +141,47 @@ public class UIPostCommentForm : MonoBehaviour
     }
     private void OnClickExpressAnswerList()
     {
-        if (recomment_object_list.Count > 0)
-        {
-            foreach (GameObject recomment in recomment_object_list)
-                recomment.SetActive(true);
-        }
+        RootCommentItemManagement.SetRcommentDIsplay(thiscomment.comment_id, true);
+        recommentactivestate = true;
         Btn_express_answer.gameObject.SetActive(false);
         Btn_blind_anser.gameObject.SetActive(true);
     }
     private void OnClickBlindAnserList()
     {
-        if (recomment_object_list.Count > 0)
-        {
-            foreach (GameObject recomment in recomment_object_list)
-                recomment.SetActive(false);
-        }
+        RootCommentItemManagement.SetRcommentDIsplay(thiscomment.comment_id, false);
+        recommentactivestate = false;
         Btn_blind_anser.gameObject.SetActive(false);
         Btn_express_answer.gameObject.SetActive(true);
-        express_answer_list.text = "... 답글" + recomment_object_list.Count.ToString() + "개 모두 보기";
     }
-    private void OnClickRecomment()
+    private void OnClickWriteRecomment()
     {
         // 국문 키패드 활성화
-        contents.text = "@" + username + " ";
-        SetRecommment();
-    }
-    public void SetRecommment()
-    {
-        if (state)
+        if(parent_comment_ID != 0)
         {
-            postcommentmanagement.state = !state;
-            postcommentmanagement.commentform = this;
+            RootCommentItemManagement.SetParentCommentIDandActive(thiscomment.top_comment_id);
         }
         else
         {
-            postcommentmanagement.state = !state;
-            contents.text = string.Empty;
+            RootCommentItemManagement.SetParentCommentIDandActive(thiscomment.comment_id);
         }
-        state = state == true ? false : true;
+        recommentstate = recommentstate == true ? false : true;
+        SetRecommment();
     }
     private void OnClickLike()
     {
-        // 클릭시 like 데이터 ++ 및 서버로 변경된 데이터 전송
-        like_count++;
-        like.text = "좋아요 " + like_count.ToString();
+        like_count--;
+        like_Text.text = "좋아요 " + like_count.ToString();
+        
+        thiscomment.bool_like = false;
         Btn_unlike.gameObject.SetActive(true);
         Btn_like.gameObject.SetActive(false);
     }
     private void OnClickUnLike()
     {
-        // 클릭시 like 데이터 -- 및 서버로 변경된 데이터 전송
-        like_count--;
-        like.text = "좋아요 " + like_count.ToString();
+        like_count++;
+        like_Text.text = "좋아요 " + like_count.ToString();
 
+        thiscomment.bool_like = true;
         Btn_like.gameObject.SetActive(true);
         Btn_unlike.gameObject.SetActive(false);
     }
@@ -194,8 +194,8 @@ public class UIPostCommentForm : MonoBehaviour
         comment.text = "삭제된 답글입니다.";
         Btn_like.gameObject.SetActive(false);
         Btn_unlike.gameObject.SetActive(false);
-        like.gameObject.SetActive(false);
-        Btn_recomment.gameObject.SetActive(false);
+        like_Text.gameObject.SetActive(false);
+        Btn_writerecomment.gameObject.SetActive(false);
         Btn_Delete.gameObject.SetActive(false);
         // 관리자가 클릭할 경우 "관리자가 삭제한 답글입니다." 표시
     }
