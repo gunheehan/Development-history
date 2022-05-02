@@ -1,0 +1,81 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
+
+public class UIPostCommentHorizontalScroll : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
+{
+    public RectTransform content;
+
+    Vector2 StartDragingPos;
+    bool isDrag = false;
+
+    public enum AnchorPresets
+    {
+        TopLeft,
+        TopRight
+    }
+
+    public void OnBeginDrag(PointerEventData eventData)
+    {
+        StartDragingPos = eventData.position;
+    }
+
+    public void OnDrag(PointerEventData eventData)
+    {
+        float nowX = eventData.position.x;
+
+        if(isDrag)
+        {
+            Vector2 pos = new Vector2(nowX, content.position.y);
+            content.position = pos;
+        }
+
+        else
+        {
+            if(Mathf.Abs(StartDragingPos.x - nowX) > 50f)
+            {
+                isDrag = true;
+            }
+        }
+    }
+
+    public void OnEndDrag(PointerEventData eventData)
+    {
+        isDrag = false;
+        SetPos(eventData.position.x);
+    }
+
+    void SetPos(float Xpos)
+    {
+        if(Xpos < StartDragingPos.x)
+        {
+            SetAnchor(content, AnchorPresets.TopLeft);
+        }
+        else if(Xpos >= StartDragingPos.x)
+        {
+            SetAnchor(content, AnchorPresets.TopRight);
+        }
+    }
+
+    void SetAnchor(RectTransform source, AnchorPresets allign)
+    {
+
+        switch(allign)
+        {
+            case (AnchorPresets.TopLeft):
+                {
+                    source.anchorMin = new Vector2(0, 1);
+                    source.anchorMax = new Vector2(0, 1);
+                    break;
+                }
+            case (AnchorPresets.TopRight):
+                {
+                    source.anchorMin = new Vector2(1, 1);
+                    source.anchorMax = new Vector2(1, 1);
+                    break;
+                }
+        }
+    }
+}
