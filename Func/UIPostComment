@@ -1,0 +1,159 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using UnityEngine.UI;
+
+public class UIPostComment : AddressableUI
+{
+    [SerializeField] GameObject CommentitemPrefab;
+    [SerializeField] RectTransform RootUIrect;
+    [SerializeField] ImageDragScrollView scrollview;
+    [SerializeField] Button Btn_enter;
+    [SerializeField] RectTransform CommentParent;
+    [SerializeField] InputField Inputfield_comment;
+
+    Dictionary<int, CommentItem> Comment = new Dictionary<int, CommentItem>();
+    Dictionary<int, List<CommentItem>> ReComment = new Dictionary<int, List<CommentItem>>();
+    CommentItem Parent_object;
+    List<CommentItem> subordination_Object;
+    List<reply> request_reply_Data;
+    public bool comment_location_state;
+    private int comment_id_number = 1;
+    public int parent_top_comment_id;
+
+    public override void OpenUI()
+    {
+        comment_location_state = true;
+        //RequestComment();
+        Btn_enter.onClick.AddListener(OnClickAddComment);
+        scrollview.Init(RootUIrect.rect.height);
+        base.OpenUI();
+    }
+
+    void RequestComment()
+    {
+
+    }
+    void ResponseServer(OVRSimpleJSON.JSONNode data)
+    {
+        CommentData jsondata = JsonUtility.FromJson<CommentData>(data);
+        request_reply_Data = jsondata.reply.ToList();
+
+        for(int i = 0; i < request_reply_Data.Count; i++)
+        {
+            reply newcomment = new reply();
+            newcomment = request_reply_Data[i];
+            CommentItem newcommented = Instantiate(CommentitemPrefab, CommentParent).GetComponent<CommentItem>();
+            if (newcomment.top_comment_id == 0)
+            {
+                newcommented.SetCommentData(newcomment);
+                Comment.Add(newcomment.comment_id, newcommented);
+                newcommented.gameObject.SetActive(true);
+            }
+            else
+            {
+                if (!ReComment.TryGetValue(parent_top_comment_id, out subordination_Object))
+                {
+                    subordination_Object = new List<CommentItem>();
+                    subordination_Object.Add(newcommented);
+                }
+                else
+                {
+                    subordination_Object = ReComment[parent_top_comment_id];
+                    subordination_Object.Add(newcommented);
+                }
+                Parent_object.SetReCommentCount(subordination_Object.Count);
+                newcommented.SetCommentData(newcomment, Parent_object.gameObject.transform.GetSiblingIndex());
+                newcommented.gameObject.SetActive(false);
+            }
+            comment_id_number++;
+        }
+    }
+    
+
+    public void SetRcommentDIsplay(int parentindex, bool state)
+    {
+        if (ReComment.TryGetValue(parentindex, out subordination_Object))
+        {
+            foreach (CommentItem recomment in subordination_Object)
+                recomment.gameObject.SetActive(state);
+        }
+    }
+    public void OnClickAddComment()
+    {
+        Debug.Log("확인 클릭");
+        reply newcomment = new reply();
+        newcomment.comment_id = comment_id_number;
+        newcomment.user_nickname = "호랑이";
+        newcomment.comment = Inputfield_comment.text;
+        newcomment.uploadtime = float.Parse(DateTime.Now.ToString("HHmmss"));
+        newcomment.bool_like = false;
+        CommentItem newcommented = Instantiate(CommentitemPrefab, CommentParent).GetComponent<CommentItem>();
+
+        if (comment_location_state)
+        {
+            newcommented.SetCommentData(newcomment);
+            Comment.Add(newcomment.comment_id, newcommented);
+            newcommented.gameObject.SetActive(true);
+        }
+        else
+        {
+            newcomment.top_comment_id = parent_top_comment_id;
+            if(!ReComment.TryGetValue(parent_top_comment_id, out subordination_Object))
+            {
+                subordination_Object = new List<CommentItem>();
+                subordination_Object.Add(newcommented);
+                ReComment.Add(parent_top_comment_id, subordination_Object);
+            }
+            else
+            {
+                subordination_Object = ReComment[parent_top_comment_id];
+                subordination_Object.Add(newcommented);
+            }
+            Parent_object = Comment[parent_top_comment_id];
+            Parent_object.SetReCommentCount(subordination_Object.Count);
+            newcommented.SetCommentData(newcomment, Parent_object.gameObject.transform.GetSiblingIndex());
+            newcommented.gameObject.SetActive(Parent_object.recommentactivestate);
+
+            comment_location_state = true;
+        }
+        Inputfield_comment.text = string.Empty;
+        comment_id_number++;
+    }
+}
+public struct CommentData
+{
+    public string user_id;
+    public string user_Profile_image_url;
+    public string nickname;
+    public string bread;
+    public string title;
+    public string body;
+    public string tags;
+    public int reply_cnt;
+    public int empathy_cnt;
+    public string createAt;
+    public string updatedAt;
+    public items[] items;
+    public reply[] reply;
+}
+
+public struct items
+{
+    public int index;
+    public string type;
+    public string url;
+}
+
+public struct reply
+{
+    public int comment_id;
+    public string user_id;
+    public string user_nickname;
+    public string comment;
+    public bool bool_like;
+    public float uploadtime;
+    public int top_comment_id;
+}
