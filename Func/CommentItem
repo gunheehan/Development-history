@@ -1,0 +1,200 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using UnityEngine.UI;
+
+public class CommentItem : MonoBehaviour
+{
+    [SerializeField] private UIPostComment RootCommentItemManagement;
+    [SerializeField] private HorizontalLayoutGroup HorizontalPadding;
+    [SerializeField] private Button Btn_profile;
+    [SerializeField] private Button Btn_nickname;
+    [SerializeField] private Button Btn_writerecomment;
+    [SerializeField] private Button Btn_like;
+    [SerializeField] private Button Btn_unlike;
+    [SerializeField] private Button Btn_express_answer;
+    [SerializeField] private Button Btn_blind_anser;
+    [SerializeField] private Button Btn_Report;
+    [SerializeField] private Button Btn_Delete;
+    [SerializeField] private GameObject Object_Recomment_Count;
+
+    [SerializeField] private Text nickname;
+    [SerializeField] private Text animal_nickname;
+    [SerializeField] private Text upload_time;
+    [SerializeField] private Text comment;
+    [SerializeField] private Text like_Text;
+    [SerializeField] private Text express_answer_list;
+    [SerializeField] private InputField contents;
+
+    reply thiscomment;
+    private int parent_comment_ID = 0;
+    private short like_count;
+    public bool recommentstate = false;
+    public bool recommentactivestate = false;
+
+    public void Start()
+    {
+        Btn_like.gameObject.SetActive(false);
+        Btn_express_answer.gameObject.SetActive(false);
+        Btn_blind_anser.gameObject.SetActive(false);
+        SetLitsener();
+    }
+    private void SetLitsener()
+    {
+        Btn_profile.onClick.AddListener(OnClickProfileORNickname);
+        Btn_nickname.onClick.AddListener(OnClickProfileORNickname);
+        Btn_writerecomment.onClick.AddListener(OnClickWriteRecomment);
+        Btn_like.onClick.AddListener(OnClickLike);
+        Btn_unlike.onClick.AddListener(OnClickUnLike);
+        Btn_express_answer.onClick.AddListener(OnClickExpressAnswerList);
+        Btn_blind_anser.onClick.AddListener(OnClickBlindAnserList);
+        Btn_Report.onClick.AddListener(OnClickReport);
+        Btn_Delete.onClick.AddListener(OnClickDelete);
+    }
+    public void SetCommentData(reply info, int siblingindex = 0)
+    {
+        nickname.text = info.user_nickname;
+        upload_time.text = ElapsedTime(info.uploadtime) + "전";
+        comment.text = info.comment;
+        if (info.comment == "")
+            comment.text = "빈 상태로 생성";
+        HorizontalPadding.padding.left = 0;
+        if (info.bool_like)
+        {
+            Btn_like.gameObject.SetActive(true);
+            Btn_unlike.gameObject.SetActive(false);
+        }
+
+        if(siblingindex != 0)
+        {
+            HorizontalPadding.padding.left += 100;
+            this.transform.SetSiblingIndex(++siblingindex);
+            Object_Recomment_Count.SetActive(false);
+            parent_comment_ID = info.top_comment_id;
+        }
+        thiscomment = info;
+    }
+
+    private string ElapsedTime(float time)
+    {
+        int[] clock = new int[3];
+        time -= float.Parse(DateTime.Now.ToString("HHmmss"));
+        time *= -1;
+        clock[0] = ((int)time / 3600);
+        clock[1] = ((int)time / 60 % 60);
+        clock[2] = ((int)time % 60);
+
+        if (clock[0] != 0)
+        {
+            if (clock[0] >= 24)
+                return clock[0] / 24 + "일";
+            else
+                return clock[0] + "시간";
+        }
+        else if (clock[1] != 0)
+        {
+            return clock[1] + "분";
+        }
+        else
+            return clock[2] + "초";
+    }
+
+    public void SetReCommentCount(int recomment_count)
+    {
+        if(Btn_express_answer.gameObject.activeSelf == false && Btn_blind_anser.gameObject.activeSelf == false)
+        {
+            Btn_express_answer.gameObject.SetActive(true);
+            express_answer_list.text = "... 답글" + recomment_count + "개 모두 보기";
+        }
+        else
+            express_answer_list.text = "... 답글" + recomment_count + "개 모두 보기";
+
+        contents.text = string.Empty;
+    }
+    /// <summary>
+    /// 
+    /// </summary>
+
+    public void SetRecommment()
+    {
+        if (recommentstate)
+        {
+            contents.text = "@" + thiscomment.user_nickname + " ";
+            if (parent_comment_ID != 0)
+            {
+                RootCommentItemManagement.parent_top_comment_id = thiscomment.top_comment_id;
+            }
+            else
+            {
+                RootCommentItemManagement.parent_top_comment_id = thiscomment.comment_id;
+            }
+            RootCommentItemManagement.comment_location_state = !recommentstate;
+        }
+        else
+        {
+            contents.text = string.Empty;
+            RootCommentItemManagement.comment_location_state = !recommentstate;
+            Debug.Log("연타로 나오면 중복");
+        }
+    }
+    private void OnClickProfileORNickname()
+    {
+        // 다이어리 페이지 출력 연결
+        Debug.Log("다이어리");
+    }
+    private void OnClickExpressAnswerList()
+    {
+        RootCommentItemManagement.SetRcommentDIsplay(thiscomment.comment_id, true);
+        recommentactivestate = true;
+        Btn_express_answer.gameObject.SetActive(false);
+        Btn_blind_anser.gameObject.SetActive(true);
+    }
+    private void OnClickBlindAnserList()
+    {
+        RootCommentItemManagement.SetRcommentDIsplay(thiscomment.comment_id, false);
+        recommentactivestate = false;
+        Btn_blind_anser.gameObject.SetActive(false);
+        Btn_express_answer.gameObject.SetActive(true);
+    }
+    private void OnClickWriteRecomment()
+    {
+        // 국문 키패드 활성화
+        Debug.Log("중복클릭 방지");
+        recommentstate = recommentstate == true ? false : true;
+        SetRecommment();
+    }
+    private void OnClickLike()
+    {
+        like_count--;
+        like_Text.text = "좋아요 " + like_count.ToString();
+        
+        thiscomment.bool_like = false;
+        Btn_unlike.gameObject.SetActive(true);
+        Btn_like.gameObject.SetActive(false);
+    }
+    private void OnClickUnLike()
+    {
+        like_count++;
+        like_Text.text = "좋아요 " + like_count.ToString();
+
+        thiscomment.bool_like = true;
+        Btn_like.gameObject.SetActive(true);
+        Btn_unlike.gameObject.SetActive(false);
+    }
+    private void OnClickReport()
+    {
+        // 신고하기 창 활성화
+    }
+    private void OnClickDelete()
+    {
+        comment.text = "삭제된 답글입니다.";
+        Btn_like.gameObject.SetActive(false);
+        Btn_unlike.gameObject.SetActive(false);
+        like_Text.gameObject.SetActive(false);
+        Btn_writerecomment.gameObject.SetActive(false);
+        Btn_Delete.gameObject.SetActive(false);
+        // 관리자가 클릭할 경우 "관리자가 삭제한 답글입니다." 표시
+    }
+}
