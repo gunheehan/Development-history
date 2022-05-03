@@ -30,11 +30,19 @@ public class UIPostComment : AddressableUI
         comment_location_state = true;
         CommentPool = new Stack<GameObject>();
         //RequestComment();
+        Inputfield_comment.onValueChanged.AddListener(ObservedInputField);
         Btn_enter.onClick.AddListener(OnClickAddComment);
+        Btn_enter.gameObject.SetActive(false);
         scrollview.Init(RootUIrect.rect.height);
         base.OpenUI();
     }
-
+    void ObservedInputField(string text)
+    {
+        if (String.IsNullOrEmpty(text))
+            Btn_enter.gameObject.SetActive(false);
+        else
+            Btn_enter.gameObject.SetActive(true);
+    }
     void RequestComment()
     {
 
@@ -78,12 +86,9 @@ public class UIPostComment : AddressableUI
             {
                 if (state)
                 {
-                    GameObject newcomment_object = PopCommentPool();
-                    CommentItem newcommented = newcomment_object.GetComponent<CommentItem>();
+                    CommentItem newcommented = PopCommentPool().GetComponent<CommentItem>();
                     Parent_object = Comment_Data[parentindex];
                     newcommented.SetCommentData(Comment_list[i].thiscomment, Parent_object[0].gameObject.transform.GetSiblingIndex());
-                    newcommented.gameObject.SetActive(true);
-                    LayoutRebuilder.ForceRebuildLayoutImmediate(newcommented.gameObject.GetComponent<RectTransform>());
 
                     if (Comment_Stack_Pool.TryGetValue(parentindex, out Comment_Stack))
                     {
@@ -95,15 +100,18 @@ public class UIPostComment : AddressableUI
                         Comment_Stack.Push(newcommented.gameObject);
                         Comment_Stack_Pool.Add(parentindex, Comment_Stack);
                     }
+                    newcommented.gameObject.SetActive(true);
+                    LayoutRebuilder.ForceRebuildLayoutImmediate(newcommented.gameObject.GetComponent<RectTransform>());
                 }
                 else
                 {
                     if(Comment_Stack_Pool.TryGetValue(parentindex, out Comment_Stack))
                     {
-                        GameObject newcomment_object = Comment_Stack.Pop();
-                        newcomment_object.SetActive(false);
-                        newcomment_object.transform.SetAsLastSibling();
-                        CommentPool.Push(newcomment_object);
+                        CommentItem newcommented = Comment_Stack.Pop().GetComponent<CommentItem>();
+                        Comment_list[Comment_list.Count - i].thiscomment = newcommented.thiscomment;
+                        newcommented.gameObject.SetActive(false);
+                        newcommented.gameObject.transform.SetAsLastSibling();
+                        CommentPool.Push(newcommented.gameObject);
                     }
                 }
             }
@@ -111,7 +119,6 @@ public class UIPostComment : AddressableUI
     }
     public void OnClickAddComment()
     {
-        Debug.Log("확인 클릭");
         reply newcomment = new reply();
         newcomment.comment_id = comment_id_number;
         newcomment.user_nickname = "호랑이";
@@ -134,17 +141,20 @@ public class UIPostComment : AddressableUI
         {
             Parent_object = Comment_Data[parent_top_comment_id];
             newcomment.top_comment_id = parent_top_comment_id;
+            newcommented = new CommentItem();
+            newcommented.thiscomment = newcomment;
             if (Parent_object[0].recommentactivestate == true)
             {
-                newcommented = PopCommentPool().GetComponent<CommentItem>();
-                newcommented.SetCommentData(newcomment, Parent_object[0].gameObject.transform.GetSiblingIndex());
-                newcommented.gameObject.SetActive(true);
-                LayoutRebuilder.ForceRebuildLayoutImmediate(newcommented.gameObject.GetComponent<RectTransform>());
-            }
-            else
-            {
-                newcommented = new CommentItem();
-                newcommented.thiscomment = newcomment;
+                CommentItem copy_comment = PopCommentPool().GetComponent<CommentItem>();
+                copy_comment.SetCommentData(newcomment, Parent_object[0].gameObject.transform.GetSiblingIndex());
+                if (Comment_Stack_Pool.TryGetValue(parent_top_comment_id, out Comment_Stack))
+                {
+                    CommentItem comment_copy = new CommentItem();
+                    Comment_Stack.Push(copy_comment.gameObject);
+                }
+
+                copy_comment.gameObject.SetActive(true);
+                LayoutRebuilder.ForceRebuildLayoutImmediate(copy_comment.gameObject.GetComponent<RectTransform>());
             }
             Comment_list = Comment_Data[parent_top_comment_id];
             Comment_list.Add(newcommented);
