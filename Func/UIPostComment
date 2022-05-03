@@ -14,7 +14,10 @@ public class UIPostComment : AddressableUI
     [SerializeField] RectTransform CommentParent;
     [SerializeField] InputField Inputfield_comment;
 
-    Dictionary<int, List<CommentItem>> Comment = new Dictionary<int, List<CommentItem>>();
+    Dictionary<int, List<CommentItem>> Comment_Data = new Dictionary<int, List<CommentItem>>();
+    Dictionary<int, Stack<GameObject>> Comment_Stack_Pool = new Dictionary<int, Stack<GameObject>>();
+    Stack<GameObject> Comment_Stack;
+    Stack<GameObject> CommentPool;
     List<CommentItem> Parent_object;
     List<CommentItem> Comment_list;
     List<reply> request_reply_Data;
@@ -25,6 +28,7 @@ public class UIPostComment : AddressableUI
     public override void OpenUI()
     {
         comment_location_state = true;
+        CommentPool = new Stack<GameObject>();
         //RequestComment();
         Btn_enter.onClick.AddListener(OnClickAddComment);
         scrollview.Init(RootUIrect.rect.height);
@@ -40,7 +44,7 @@ public class UIPostComment : AddressableUI
         CommentData jsondata = JsonUtility.FromJson<CommentData>(data);
         request_reply_Data = jsondata.reply.ToList();
 
-        for(int i = 0; i < request_reply_Data.Count; i++)
+        for (int i = 0; i < request_reply_Data.Count; i++)
         {
             reply newcomment = new reply();
             newcomment = request_reply_Data[i];
@@ -50,12 +54,12 @@ public class UIPostComment : AddressableUI
                 newcommented.SetCommentData(newcomment);
                 Comment_list = new List<CommentItem>();
                 Comment_list.Add(newcommented);
-                Comment.Add(newcomment.comment_id, Comment_list);
+                Comment_Data.Add(newcomment.comment_id, Comment_list);
                 newcommented.gameObject.SetActive(true);
             }
             else
             {
-                Comment_list = Comment[parent_top_comment_id];
+                Comment_list = Comment_Data[parent_top_comment_id];
                 Comment_list.Add(newcommented);
                 Parent_object[0].SetReCommentCount(Comment_list.Count - 1);
                 newcommented.SetCommentData(newcomment, Parent_object[0].gameObject.transform.GetSiblingIndex());
@@ -64,15 +68,44 @@ public class UIPostComment : AddressableUI
             comment_id_number++;
         }
     }
-    
+
 
     public void SetRcommentDIsplay(int parentindex, bool state)
     {
-        if (Comment.TryGetValue(parentindex, out Comment_list))
+        if (Comment_Data.TryGetValue(parentindex, out Comment_list))
         {
-            for(int i = 1; i < Comment_list.Count; i++)
+            for (int i = 1; i < Comment_list.Count; i++)
             {
-                Comment_list[i].gameObject.SetActive(state);
+                if (state)
+                {
+                    GameObject newcomment_object = PopCommentPool();
+                    CommentItem newcommented = newcomment_object.GetComponent<CommentItem>();
+                    Parent_object = Comment_Data[parentindex];
+                    newcommented.SetCommentData(Comment_list[i].thiscomment, Parent_object[0].gameObject.transform.GetSiblingIndex());
+                    newcommented.gameObject.SetActive(true);
+                    LayoutRebuilder.ForceRebuildLayoutImmediate(newcommented.gameObject.GetComponent<RectTransform>());
+
+                    if (Comment_Stack_Pool.TryGetValue(parentindex, out Comment_Stack))
+                    {
+                        Comment_Stack.Push(newcommented.gameObject);
+                    }
+                    else
+                    {
+                        Comment_Stack = new Stack<GameObject>();
+                        Comment_Stack.Push(newcommented.gameObject);
+                        Comment_Stack_Pool.Add(parentindex, Comment_Stack);
+                    }
+                }
+                else
+                {
+                    if(Comment_Stack_Pool.TryGetValue(parentindex, out Comment_Stack))
+                    {
+                        GameObject newcomment_object = Comment_Stack.Pop();
+                        newcomment_object.SetActive(false);
+                        newcomment_object.transform.SetAsLastSibling();
+                        CommentPool.Push(newcomment_object);
+                    }
+                }
             }
         }
     }
@@ -85,31 +118,53 @@ public class UIPostComment : AddressableUI
         newcomment.comment = Inputfield_comment.text;
         newcomment.uploadtime = float.Parse(DateTime.Now.ToString("HHmmss"));
         newcomment.bool_like = false;
-        CommentItem newcommented = Instantiate(CommentitemPrefab, CommentParent).GetComponent<CommentItem>();
-
+        CommentItem newcommented;
         if (comment_location_state)
         {
+            newcommented = PopCommentPool().GetComponent<CommentItem>();
             newcommented.SetCommentData(newcomment);
             Comment_list = new List<CommentItem>();
             Comment_list.Add(newcommented);
-            Comment.Add(newcomment.comment_id, Comment_list);
+            Comment_Data.Add(newcomment.comment_id, Comment_list);
+            newcommented.transform.SetAsLastSibling();
             newcommented.gameObject.SetActive(true);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(newcommented.gameObject.GetComponent<RectTransform>());
         }
         else
         {
+            Parent_object = Comment_Data[parent_top_comment_id];
             newcomment.top_comment_id = parent_top_comment_id;
-            Comment_list = Comment[parent_top_comment_id];
+            if (Parent_object[0].recommentactivestate == true)
+            {
+                newcommented = PopCommentPool().GetComponent<CommentItem>();
+                newcommented.SetCommentData(newcomment, Parent_object[0].gameObject.transform.GetSiblingIndex());
+                newcommented.gameObject.SetActive(true);
+                LayoutRebuilder.ForceRebuildLayoutImmediate(newcommented.gameObject.GetComponent<RectTransform>());
+            }
+            else
+            {
+                newcommented = new CommentItem();
+                newcommented.thiscomment = newcomment;
+            }
+            Comment_list = Comment_Data[parent_top_comment_id];
             Comment_list.Add(newcommented);
-            Parent_object = Comment[parent_top_comment_id];
             Parent_object[0].SetReCommentCount(Comment_list.Count - 1);
-            newcommented.SetCommentData(newcomment, Parent_object[0].gameObject.transform.GetSiblingIndex());
-            newcommented.gameObject.SetActive(Parent_object[0].recommentactivestate);
 
             comment_location_state = true;
         }
-        LayoutRebuilder.ForceRebuildLayoutImmediate(newcommented.gameObject.GetComponent<RectTransform>());
         Inputfield_comment.text = string.Empty;
         comment_id_number++;
+    }
+
+    GameObject PopCommentPool()
+    {
+        if (CommentPool.Count > 0)
+            return CommentPool.Pop();
+        else
+        {
+            GameObject newcommented = Instantiate(CommentitemPrefab, CommentParent);
+            return newcommented;
+        }
     }
 }
 public struct CommentData
