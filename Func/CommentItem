@@ -28,18 +28,22 @@ public class CommentItem : MonoBehaviour
     [SerializeField] private Text express_answer_list;
     [SerializeField] private InputField contents;
 
-    reply thiscomment;
-    private int parent_comment_ID = 0;
+    public reply thiscomment;
+    private int parent_comment_ID;
     private short like_count;
-    public bool recommentstate = false;
+    public bool recommentstate = true;
     public bool recommentactivestate = false;
 
-    public void Start()
+    private void Init()
     {
+        SetLitsener();
+        Btn_writerecomment.gameObject.SetActive(true);
+        Btn_Delete.gameObject.SetActive(true);
+        Btn_unlike.gameObject.SetActive(true);
         Btn_like.gameObject.SetActive(false);
         Btn_express_answer.gameObject.SetActive(false);
         Btn_blind_anser.gameObject.SetActive(false);
-        SetLitsener();
+        like_Text.gameObject.SetActive(false);
     }
     private void SetLitsener()
     {
@@ -55,25 +59,41 @@ public class CommentItem : MonoBehaviour
     }
     public void SetCommentData(reply info, int siblingindex = 0)
     {
+        Init();
         nickname.text = info.user_nickname;
         upload_time.text = ElapsedTime(info.uploadtime) + "전";
         comment.text = info.comment;
+        
         if (info.comment == "")
             comment.text = "빈 상태로 생성";
+        
         HorizontalPadding.padding.left = 0;
         if (info.bool_like)
         {
+            like_count = 1;
+            like_Text.text = "좋아요 " + like_count.ToString();
+            like_Text.gameObject.SetActive(true);
             Btn_like.gameObject.SetActive(true);
             Btn_unlike.gameObject.SetActive(false);
         }
-
-        if(siblingindex != 0)
+        else
         {
-            HorizontalPadding.padding.left += 100;
-            this.transform.SetSiblingIndex(++siblingindex);
-            Object_Recomment_Count.SetActive(false);
-            parent_comment_ID = info.top_comment_id;
+            like_count = 0;
+            like_Text.text = "좋아요 " + like_count.ToString();
+            like_Text.gameObject.SetActive(false);
+            Btn_like.gameObject.SetActive(false);
+            Btn_unlike.gameObject.SetActive(true);
         }
+        
+        Object_Recomment_Count.SetActive(true);
+        if (siblingindex != 0)
+        {
+            HorizontalPadding.padding.left += 120;
+            this.transform.SetSiblingIndex(++siblingindex);
+            parent_comment_ID = info.top_comment_id;
+            Object_Recomment_Count.SetActive(false);
+        }
+
         thiscomment = info;
     }
 
@@ -105,17 +125,14 @@ public class CommentItem : MonoBehaviour
     {
         if(Btn_express_answer.gameObject.activeSelf == false && Btn_blind_anser.gameObject.activeSelf == false)
         {
-            Btn_express_answer.gameObject.SetActive(true);
             express_answer_list.text = "... 답글" + recomment_count + "개 모두 보기";
+            Btn_express_answer.gameObject.SetActive(true);
         }
         else
             express_answer_list.text = "... 답글" + recomment_count + "개 모두 보기";
 
         contents.text = string.Empty;
     }
-    /// <summary>
-    /// 
-    /// </summary>
 
     public void SetRecommment()
     {
@@ -138,6 +155,7 @@ public class CommentItem : MonoBehaviour
             RootCommentItemManagement.comment_location_state = !recommentstate;
             Debug.Log("연타로 나오면 중복");
         }
+        recommentstate = recommentstate == true ? false : true;
     }
     private void OnClickProfileORNickname()
     {
@@ -150,6 +168,7 @@ public class CommentItem : MonoBehaviour
         recommentactivestate = true;
         Btn_express_answer.gameObject.SetActive(false);
         Btn_blind_anser.gameObject.SetActive(true);
+        LayoutRebuilder.ForceRebuildLayoutImmediate(gameObject.GetComponent<RectTransform>());
     }
     private void OnClickBlindAnserList()
     {
@@ -157,12 +176,12 @@ public class CommentItem : MonoBehaviour
         recommentactivestate = false;
         Btn_blind_anser.gameObject.SetActive(false);
         Btn_express_answer.gameObject.SetActive(true);
+        LayoutRebuilder.ForceRebuildLayoutImmediate(gameObject.GetComponent<RectTransform>());
     }
     private void OnClickWriteRecomment()
     {
         // 국문 키패드 활성화
         Debug.Log("중복클릭 방지");
-        recommentstate = recommentstate == true ? false : true;
         SetRecommment();
     }
     private void OnClickLike()
@@ -171,6 +190,11 @@ public class CommentItem : MonoBehaviour
         like_Text.text = "좋아요 " + like_count.ToString();
         
         thiscomment.bool_like = false;
+        if (like_count <= 0)
+        {
+            like_Text.gameObject.SetActive(false);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(gameObject.GetComponent<RectTransform>());
+        }
         Btn_unlike.gameObject.SetActive(true);
         Btn_like.gameObject.SetActive(false);
     }
@@ -180,8 +204,10 @@ public class CommentItem : MonoBehaviour
         like_Text.text = "좋아요 " + like_count.ToString();
 
         thiscomment.bool_like = true;
+        like_Text.gameObject.SetActive(true);
         Btn_like.gameObject.SetActive(true);
         Btn_unlike.gameObject.SetActive(false);
+        LayoutRebuilder.ForceRebuildLayoutImmediate(gameObject.GetComponent<RectTransform>());
     }
     private void OnClickReport()
     {
