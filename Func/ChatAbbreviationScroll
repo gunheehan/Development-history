@@ -1,0 +1,141 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
+
+public class ChatAbbreviationScroll : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
+{
+    [SerializeField] CanvasScaler RootObject_CanvasScaler;
+    [SerializeField] RectTransform ScrollRootImage;
+    [SerializeField] GameObject abbreviation_item_Prefab;
+    [SerializeField] Transform item_Parent;
+    [SerializeField] GameObject discernment_Prefab;
+
+    [SerializeField] HorizontalLayoutGroup contents_Horizontal;
+    [SerializeField] int ViewItemCount = 4;
+
+    ChatItem[] Item;
+    GameObject[] abbreviation_item;
+    GameObject[] discernment_object;
+    Text[] abbreviation_text;
+    LayoutElement[] width_limit;
+
+    string[] abbreciation = new string[] { "할라라라라라라라라라라", "아o유", "안녕!", "ㅋㅋㅋㅋ", "놀자", "좋아!", "싫어", "고마워:)","2놀자", "좋아!", "싫어", "고마워:)" };
+
+    Vector2 StartDragingPos;
+    int pagesize;
+    int pagenum = 0;
+    float Layout_Preferred_size;
+    bool isDrag = false;
+
+    void Start()
+    {
+        Abbreviation_Canvas_Resolution();
+        Setabbreviation();
+    }
+
+    void Abbreviation_Canvas_Resolution()
+    {
+        float widthRatio = Screen.width / RootObject_CanvasScaler.referenceResolution.x;
+        float heightratio = Screen.height / RootObject_CanvasScaler.referenceResolution.y;
+
+        float ratio = widthRatio * (1f - RootObject_CanvasScaler.matchWidthOrHeight) + heightratio * (RootObject_CanvasScaler.matchWidthOrHeight);
+
+        float pixelwidth = ScrollRootImage.rect.width * ratio;
+        float padding_size = (contents_Horizontal.padding.left + contents_Horizontal.padding.right + (contents_Horizontal.spacing * (ViewItemCount - 1))) * ratio;
+
+        Layout_Preferred_size = (pixelwidth - padding_size) / ViewItemCount;
+
+    }
+    void Setabbreviation()
+    {
+        pagesize = abbreciation.Length / ViewItemCount;
+        abbreviation_item = new GameObject[ViewItemCount];
+        discernment_object = new GameObject[pagesize];
+        abbreviation_text = new Text[ViewItemCount];
+        width_limit = new LayoutElement[ViewItemCount];
+
+        for (int i = 0; i < ViewItemCount; i++)
+        {
+            abbreviation_item[i] = Instantiate(abbreviation_item_Prefab,item_Parent);
+            abbreviation_text[i] = abbreviation_item[i].GetComponentInChildren<Text>();
+            width_limit[i] = abbreviation_item[i].GetComponentInChildren<LayoutElement>();
+        }
+        SetabbreviationData();
+    }
+
+    void SetabbreviationData()
+    {
+        for (int i = 0; i < ViewItemCount; i++)
+        {
+            //width_limit[i].enabled = false;
+            abbreviation_text[i].text = abbreciation[i + (pagenum * ViewItemCount)];
+            abbreviation_item[i].SetActive(true);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(abbreviation_item[i].gameObject.GetComponentInChildren<RectTransform>());
+            if (abbreviation_item[i].GetComponentInChildren<RectTransform>().rect.width > Layout_Preferred_size)
+            {
+                width_limit[i].enabled = true;
+                width_limit[i].preferredWidth = Layout_Preferred_size;
+                Debug.Log("True : " + abbreviation_item[i].name + " => "+ abbreviation_item[i].GetComponentInChildren<RectTransform>().rect.width + ">" + Layout_Preferred_size);
+            }
+            else
+            {
+                width_limit[i].enabled = false;
+                Debug.Log("False : " + abbreviation_item[i].name + " => " + abbreviation_item[i].GetComponentInChildren<RectTransform>().rect.width + "<" + Layout_Preferred_size);
+            }
+            LayoutRebuilder.ForceRebuildLayoutImmediate(abbreviation_item[i].gameObject.GetComponentInChildren<RectTransform>());
+        }
+    }
+
+    public void OnBeginDrag(PointerEventData eventData)
+    {
+        StartDragingPos = eventData.position;
+    }
+
+    public void OnDrag(PointerEventData eventData)
+    {
+        /*float nowX = eventData.position.x;
+
+        if (isDrag)
+        {
+            //Vector2 pos = new Vector2(nowX, content.position.y);
+            //content.position = pos;
+        }
+
+        else
+        {
+            if (Mathf.Abs(StartDragingPos.x - nowX) > 20f)
+            {
+                isDrag = true;
+            }
+        }*/
+    }
+
+    public void OnEndDrag(PointerEventData eventData)
+    {
+        isDrag = false;
+        SetPos(eventData.position.x);
+    }
+
+    void SetPos(float Xpos)
+    {
+        if (Xpos < StartDragingPos.x)
+        {
+            if(pagenum < pagesize - 1)
+            {
+                pagenum++;
+                SetabbreviationData();
+            }
+        }
+        else if (Xpos >= StartDragingPos.x)
+        {
+            if(pagenum != 0)
+            {
+                pagenum--;
+                SetabbreviationData();
+            }
+        }
+    }
+}
+
