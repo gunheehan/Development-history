@@ -9,16 +9,19 @@ public class ChatAbbreviationScroll : MonoBehaviour, IBeginDragHandler, IDragHan
     [SerializeField] CanvasScaler RootObject_CanvasScaler;
     [SerializeField] RectTransform ScrollRootImage;
     [SerializeField] GameObject abbreviation_item_Prefab;
-    [SerializeField] Transform item_Parent;
+    [SerializeField] Transform Abbreviation_Item_Parent;
+    [SerializeField] Transform Discernment_Item_Parent;
     [SerializeField] GameObject discernment_Prefab;
 
     [SerializeField] HorizontalLayoutGroup contents_Horizontal;
     [SerializeField] int ViewItemCount = 4;
 
     ChatItem[] abbreviation_item;
-    GameObject[] discernment_object;
+    Image[] discernment_img;
+    Color32 Curent_Page_Color;
+    Color32 Other_Page_Color;
 
-    string[] abbreciation = new string[] { "할라라라라라라라라라라", "아o유", "안녕!", "ㅋㅋㅋㅋ", "놀자", "좋아!", "싫어", "고마워:)","222222놀자", "좋아!", "2222222싫어", "2고마워:)" };
+    string[] abbreciation = new string[] { "ㅇ모ㅇ모", "아o유", "안녕!", "ㅋㅋㅋㅋ", "놀자", "좋아!", "싫어", "고마워:)","222222놀자", "좋아!", "2222222싫어", "2고마워:)" };
 
     Vector2 StartDragingPos;
     int pagesize;
@@ -28,6 +31,8 @@ public class ChatAbbreviationScroll : MonoBehaviour, IBeginDragHandler, IDragHan
 
     void Start()
     {
+        Curent_Page_Color = new Color32(19, 19, 19, 255);
+        Other_Page_Color = new Color32(189, 189, 189, 255);
         Abbreviation_Canvas_Resolution();
         Setabbreviation();
     }
@@ -48,12 +53,26 @@ public class ChatAbbreviationScroll : MonoBehaviour, IBeginDragHandler, IDragHan
     {
         pagesize = abbreciation.Length / ViewItemCount;
         abbreviation_item = new ChatItem[ViewItemCount];
-        discernment_object = new GameObject[pagesize];
+        discernment_img = new Image[pagesize];
 
         for (int i = 0; i < ViewItemCount; i++)
         {
-            abbreviation_item[i] = Instantiate(abbreviation_item_Prefab, item_Parent).GetComponent<ChatItem>();
+            abbreviation_item[i] = Instantiate(abbreviation_item_Prefab, Abbreviation_Item_Parent).GetComponent<ChatItem>();
             abbreviation_item[i].gameObject.SetActive(true);
+        }
+
+        for (int i = 0; i < pagesize; i++)
+        {
+            discernment_img[i] = Instantiate(discernment_Prefab, Discernment_Item_Parent).GetComponent<Image>();
+            if (i == 0)
+                discernment_img[i].color = Curent_Page_Color;
+
+
+            else
+                discernment_img[i].color = Other_Page_Color;
+
+            discernment_img[i].gameObject.SetActive(true);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(discernment_img[i].rectTransform);
         }
         SetabbreviationData();
     }
@@ -121,7 +140,9 @@ public class ChatAbbreviationScroll : MonoBehaviour, IBeginDragHandler, IDragHan
         {
             if(pagenum < pagesize - 1)
             {
+                discernment_img[pagenum].color = Other_Page_Color;
                 pagenum++;
+                discernment_img[pagenum].color = Curent_Page_Color;
                 SetabbreviationData();
             }
         }
@@ -129,9 +150,12 @@ public class ChatAbbreviationScroll : MonoBehaviour, IBeginDragHandler, IDragHan
         {
             if(pagenum != 0)
             {
+                discernment_img[pagenum].color = Other_Page_Color;
                 pagenum--;
+                discernment_img[pagenum].color = Curent_Page_Color;
                 SetabbreviationData();
             }
         }
     }
 }
+
