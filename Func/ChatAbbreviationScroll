@@ -15,13 +15,10 @@ public class ChatAbbreviationScroll : MonoBehaviour, IBeginDragHandler, IDragHan
     [SerializeField] HorizontalLayoutGroup contents_Horizontal;
     [SerializeField] int ViewItemCount = 4;
 
-    ChatItem[] Item;
-    GameObject[] abbreviation_item;
+    ChatItem[] abbreviation_item;
     GameObject[] discernment_object;
-    Text[] abbreviation_text;
-    LayoutElement[] width_limit;
 
-    string[] abbreciation = new string[] { "할라라라라라라라라라라", "아o유", "안녕!", "ㅋㅋㅋㅋ", "놀자", "좋아!", "싫어", "고마워:)","2놀자", "좋아!", "싫어", "고마워:)" };
+    string[] abbreciation = new string[] { "할라라라라라라라라라라", "아o유", "안녕!", "ㅋㅋㅋㅋ", "놀자", "좋아!", "싫어", "고마워:)","222222놀자", "좋아!", "2222222싫어", "2고마워:)" };
 
     Vector2 StartDragingPos;
     int pagesize;
@@ -45,22 +42,18 @@ public class ChatAbbreviationScroll : MonoBehaviour, IBeginDragHandler, IDragHan
         float pixelwidth = ScrollRootImage.rect.width * ratio;
         float padding_size = (contents_Horizontal.padding.left + contents_Horizontal.padding.right + (contents_Horizontal.spacing * (ViewItemCount - 1))) * ratio;
 
-        Layout_Preferred_size = (pixelwidth - padding_size) / ViewItemCount;
-
+        Layout_Preferred_size = (pixelwidth - padding_size) / (ViewItemCount + 1);
     }
     void Setabbreviation()
     {
         pagesize = abbreciation.Length / ViewItemCount;
-        abbreviation_item = new GameObject[ViewItemCount];
+        abbreviation_item = new ChatItem[ViewItemCount];
         discernment_object = new GameObject[pagesize];
-        abbreviation_text = new Text[ViewItemCount];
-        width_limit = new LayoutElement[ViewItemCount];
 
         for (int i = 0; i < ViewItemCount; i++)
         {
-            abbreviation_item[i] = Instantiate(abbreviation_item_Prefab,item_Parent);
-            abbreviation_text[i] = abbreviation_item[i].GetComponentInChildren<Text>();
-            width_limit[i] = abbreviation_item[i].GetComponentInChildren<LayoutElement>();
+            abbreviation_item[i] = Instantiate(abbreviation_item_Prefab, item_Parent).GetComponent<ChatItem>();
+            abbreviation_item[i].gameObject.SetActive(true);
         }
         SetabbreviationData();
     }
@@ -70,21 +63,25 @@ public class ChatAbbreviationScroll : MonoBehaviour, IBeginDragHandler, IDragHan
         for (int i = 0; i < ViewItemCount; i++)
         {
             //width_limit[i].enabled = false;
-            abbreviation_text[i].text = abbreciation[i + (pagenum * ViewItemCount)];
-            abbreviation_item[i].SetActive(true);
-            LayoutRebuilder.ForceRebuildLayoutImmediate(abbreviation_item[i].gameObject.GetComponentInChildren<RectTransform>());
-            if (abbreviation_item[i].GetComponentInChildren<RectTransform>().rect.width > Layout_Preferred_size)
+            abbreviation_item[i].ItemLayoutElement.enabled = false;
+            abbreviation_item[i].ItemComment.text = abbreciation[i + (pagenum * ViewItemCount)];
+            abbreviation_item[i].ItemLayoutElement.preferredWidth = Layout_Preferred_size;
+
+            LayoutRebuilder.ForceRebuildLayoutImmediate(abbreviation_item[i].ItemComment.rectTransform);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(abbreviation_item[i].Item_Img.rectTransform);
+            if (abbreviation_item[i].Item_Img.rectTransform.rect.width > Layout_Preferred_size)
             {
-                width_limit[i].enabled = true;
-                width_limit[i].preferredWidth = Layout_Preferred_size;
-                Debug.Log("True : " + abbreviation_item[i].name + " => "+ abbreviation_item[i].GetComponentInChildren<RectTransform>().rect.width + ">" + Layout_Preferred_size);
+                abbreviation_item[i].ItemLayoutElement.enabled = true;
+                LayoutRebuilder.ForceRebuildLayoutImmediate(abbreviation_item[i].Item_Img.rectTransform);
+
+                Debug.Log("True : " + abbreviation_item[i].name + " => "+ abbreviation_item[i].Item_Img.rectTransform.rect.width + ">" + Layout_Preferred_size);
             }
-            else
+
+            /*else
             {
-                width_limit[i].enabled = false;
-                Debug.Log("False : " + abbreviation_item[i].name + " => " + abbreviation_item[i].GetComponentInChildren<RectTransform>().rect.width + "<" + Layout_Preferred_size);
-            }
-            LayoutRebuilder.ForceRebuildLayoutImmediate(abbreviation_item[i].gameObject.GetComponentInChildren<RectTransform>());
+                abbreviation_item[i].ItemLayoutElement.enabled = false;
+                Debug.Log("False : " + abbreviation_item[i].name + " => " + abbreviation_item[i].Item_Img.rectTransform.rect.width + "<" + Layout_Preferred_size);
+            }*/
         }
     }
 
@@ -138,4 +135,3 @@ public class ChatAbbreviationScroll : MonoBehaviour, IBeginDragHandler, IDragHan
         }
     }
 }
-
