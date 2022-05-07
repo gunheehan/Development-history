@@ -1,0 +1,144 @@
+using Photon.Chat;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+
+public struct ChennelData
+{
+    public int text_index;
+    public string sender_id;
+    public string text_message;
+}
+public class UIChat : AddressableUI, ChatSubscriber
+{
+    string PresentChannel;
+
+    List<string> ChannelList = new List<string>();
+    Dictionary<string, string> ChannelText = new Dictionary<string, string>();
+    [SerializeField] InputField Message;
+    [SerializeField] Text MessageText;
+
+    Dictionary<string, List<ChennelData>> ChannelMassage = new Dictionary<string, List<ChennelData>>();
+    List<ChennelData> channel_text_list;
+    Queue<ChatItem> qu_Chatitem;
+    ChatItem MessageChatItem;
+    [SerializeField] GameObject MessagePrefab;
+    [SerializeField] RectTransform MessageParent;
+    [SerializeField] Button CurentChennel;
+    [SerializeField] Button CommunityChennel;
+    Color32 Curent_Chennel_Btn_Color;
+    Color32 Other_Chennel_Btn_Color;
+
+    private void Awake()
+    {
+        // Channel Toggle 관련
+        ChannelChild.gameObject.SetActive(false);
+        ChatManager.Instance.Subscribe(this);
+    }
+    // Start is called before the first frame update
+    void Start()
+    {
+        ChatManager.Instance.ChatAccount = "테스트중";
+        Curent_Chennel_Btn_Color = new Color32(255, 255, 255, 255);
+        Other_Chennel_Btn_Color = new Color32(192, 192, 192, 255);
+        AddListener();
+    }
+    public override void OpenUI()
+    {
+        base.OpenUI();
+    }
+    public override void CloseUI()
+    {
+        ChatManager.Instance.UnSubscribe(this);
+        base.CloseUI();
+    }
+    void AddListener()
+    {
+        CurentChennel.onClick.AddListener(OnClickCurentChennel);
+        CommunityChennel.onClick.AddListener(OnClickCommunityChennel);
+    }
+    void OnClickCurentChennel()
+    {
+        CurentChennel.image.color = Curent_Chennel_Btn_Color;
+        CommunityChennel.image.color = Other_Chennel_Btn_Color;
+    }
+    void OnClickCommunityChennel()
+    {
+        CurentChennel.image.color = Other_Chennel_Btn_Color;
+        CommunityChennel.image.color = Curent_Chennel_Btn_Color;
+    }
+   
+    void show_Channel()
+    {
+        MessageText.text = ChannelText[PresentChannel];
+
+        MessageChatItem = Instantiate(MessagePrefab, MessageParent).GetComponent<ChatItem>();
+        MessageChatItem.Chat_Text.text = ChannelText[PresentChannel];
+        qu_Chatitem.Enqueue(MessageChatItem);
+    }
+    
+    public void Send_Message()
+    {
+        ChatManager.Instance.SendMessage(PresentChannel, this.Message.text);
+        this.Message.text = string.Empty;
+    }
+    public void Send_Message(string _Message)
+    {
+        ChatManager.Instance.SendMessage(PresentChannel, _Message);
+        this.Message.text = string.Empty;
+    }
+    public void Send_Submit()
+    {
+        if (this.Message == null)
+            return;
+
+        if (Input.GetKey(KeyCode.Escape))
+        {
+            this.Message.text = null;
+            return;
+        }
+
+        if (Input.GetKey(KeyCode.Return) || Input.GetKey(KeyCode.KeypadEnter))
+            Send_Message();
+    }
+    public void Send_Click()
+    {
+        if (this.Message == null)
+            return;
+
+        Send_Message();
+    }
+
+    void ChatSubscriber.OnUpdateMessage(string channel, string sender, string message)
+    {
+        if(ChannelText.ContainsKey(channel))
+        {
+            ChannelText[channel] += $"\n{message}";
+            show_Channel();
+        }
+        ChennelData newchenneldata = new ChennelData();
+        newchenneldata.sender_id = sender;
+        newchenneldata.text_message = message;
+        if (ChannelMassage.TryGetValue(channel, out channel_text_list))
+        {
+            channel_text_list.Add(newchenneldata);
+        }
+        else
+        {
+            channel_text_list = new List<ChennelData>();
+            channel_text_list.Add(newchenneldata);
+            ChannelMassage.Add(channel, channel_text_list);
+        }
+    }
+
+    void ChatSubscriber.OnSubscribe()
+    {
+
+    }
+
+    void ChatSubscriber.UnSubscribe()
+    {
+
+    }
+}
