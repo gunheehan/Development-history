@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class ChatAbbreviationScroll : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
+public class ChatAbbreviationScroll : MonoBehaviour, IBeginDragHandler, IEndDragHandler
 {
     [SerializeField] CanvasScaler RootObject_CanvasScaler;
     [SerializeField] RectTransform ScrollRootImage;
@@ -16,7 +16,7 @@ public class ChatAbbreviationScroll : MonoBehaviour, IBeginDragHandler, IDragHan
     [SerializeField] HorizontalLayoutGroup contents_Horizontal;
     [SerializeField] int ViewItemCount = 4;
 
-    ChatItem[] abbreviation_item;
+    AbbreviationItem[] abbreviation_item;
     Image[] discernment_img;
     Color32 Curent_Page_Color;
     Color32 Other_Page_Color;
@@ -52,12 +52,12 @@ public class ChatAbbreviationScroll : MonoBehaviour, IBeginDragHandler, IDragHan
     void Setabbreviation()
     {
         pagesize = abbreciation.Length / ViewItemCount;
-        abbreviation_item = new ChatItem[ViewItemCount];
+        abbreviation_item = new AbbreviationItem[ViewItemCount];
         discernment_img = new Image[pagesize];
 
         for (int i = 0; i < ViewItemCount; i++)
         {
-            abbreviation_item[i] = Instantiate(abbreviation_item_Prefab, Abbreviation_Item_Parent).GetComponent<ChatItem>();
+            abbreviation_item[i] = Instantiate(abbreviation_item_Prefab, Abbreviation_Item_Parent).GetComponent<AbbreviationItem>();
             abbreviation_item[i].gameObject.SetActive(true);
         }
 
@@ -81,7 +81,6 @@ public class ChatAbbreviationScroll : MonoBehaviour, IBeginDragHandler, IDragHan
     {
         for (int i = 0; i < ViewItemCount; i++)
         {
-            //width_limit[i].enabled = false;
             abbreviation_item[i].ItemLayoutElement.enabled = false;
             abbreviation_item[i].ItemComment.text = abbreciation[i + (pagenum * ViewItemCount)];
             abbreviation_item[i].ItemLayoutElement.preferredWidth = Layout_Preferred_size;
@@ -95,37 +94,12 @@ public class ChatAbbreviationScroll : MonoBehaviour, IBeginDragHandler, IDragHan
 
                 Debug.Log("True : " + abbreviation_item[i].name + " => "+ abbreviation_item[i].Item_Img.rectTransform.rect.width + ">" + Layout_Preferred_size);
             }
-
-            /*else
-            {
-                abbreviation_item[i].ItemLayoutElement.enabled = false;
-                Debug.Log("False : " + abbreviation_item[i].name + " => " + abbreviation_item[i].Item_Img.rectTransform.rect.width + "<" + Layout_Preferred_size);
-            }*/
         }
     }
 
     public void OnBeginDrag(PointerEventData eventData)
     {
         StartDragingPos = eventData.position;
-    }
-
-    public void OnDrag(PointerEventData eventData)
-    {
-        /*float nowX = eventData.position.x;
-
-        if (isDrag)
-        {
-            //Vector2 pos = new Vector2(nowX, content.position.y);
-            //content.position = pos;
-        }
-
-        else
-        {
-            if (Mathf.Abs(StartDragingPos.x - nowX) > 20f)
-            {
-                isDrag = true;
-            }
-        }*/
     }
 
     public void OnEndDrag(PointerEventData eventData)
@@ -158,4 +132,3 @@ public class ChatAbbreviationScroll : MonoBehaviour, IBeginDragHandler, IDragHan
         }
     }
 }
-
