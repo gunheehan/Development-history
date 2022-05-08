@@ -4,14 +4,12 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public struct ChennelData
-{
-    public int text_index;
-    public string sender_id;
-    public string text_message;
-}
 public class UIChat : AddressableUI, ChatSubscriber
 {
+    [Header("Channel")]
+    [SerializeField] ToggleGroup ChannelParent;
+    [SerializeField] Toggle ChannelChild;
+    List<Toggle> ChannelChildList = new List<Toggle>();
     string PresentChannel;
 
     List<string> ChannelList = new List<string>();
@@ -19,10 +17,12 @@ public class UIChat : AddressableUI, ChatSubscriber
     [SerializeField] InputField Message;
     [SerializeField] Text MessageText;
 
-    Dictionary<string, List<ChennelData>> ChannelMassage = new Dictionary<string, List<ChennelData>>();
-    List<ChennelData> channel_text_list;
-    Queue<ChatItem> qu_Chatitem;
-    ChatItem MessageChatItem;
+    Dictionary<string, List<ChatItem>> ChannelMassage = new Dictionary<string, List<ChatItem>>();
+    List<ChatItem> channel_text_list;
+    private int chat_id_number = 1;
+    Queue<ChatItem> Chatitem_Queue;
+    Queue<ChatItem> Chatitem_Pool;
+    Queue<int> text_int;
     [SerializeField] GameObject MessagePrefab;
     [SerializeField] RectTransform MessageParent;
     [SerializeField] Button CurentChennel;
@@ -35,6 +35,10 @@ public class UIChat : AddressableUI, ChatSubscriber
         // Channel Toggle 관련
         ChannelChild.gameObject.SetActive(false);
         ChatManager.Instance.Subscribe(this);
+        Chatitem_Pool = new Queue<ChatItem>(10);
+        text_int = new Queue<int>(10);
+        text_int.Enqueue(10);
+        Debug.Log("Queue크기 : " + text_int.Count);
     }
     // Start is called before the first frame update
     void Start()
@@ -68,14 +72,66 @@ public class UIChat : AddressableUI, ChatSubscriber
         CurentChennel.image.color = Other_Chennel_Btn_Color;
         CommunityChennel.image.color = Curent_Chennel_Btn_Color;
     }
-   
+    public void RefreshChat()
+    {
+        var channelList = ChatManager.Instance.ChatChannel;
+        for (int idx = 0; idx < channelList.Count; ++idx)
+            AddToggle(channelList[idx]);
+        ChannelChildList[0].isOn = true;
+    }
+    public void AddToggle(string _channel)
+    {
+        var newToggle = Instantiate(ChannelChild, ChannelParent.transform);
+        newToggle.gameObject.SetActive(true);
+        ChannelParent.RegisterToggle(newToggle);
+
+        int channelIndex = ChannelList.Count;
+        newToggle.onValueChanged.AddListener
+            (
+                (bool isClick) => 
+                {
+                    if (isClick) ClickToggle(channelIndex);
+                }
+            );
+
+        string toggleText = string.Empty;
+        toggleText = _channel;
+        if (_channel.IndexOf('_') != -1)
+            toggleText = toggleText.Substring(0,_channel.IndexOf('_'));
+        newToggle.GetComponentInChildren<Text>().text = toggleText;
+
+        ChannelChildList.Add(newToggle);
+        ChannelList.Add(_channel);
+        ChannelText.Add(_channel, string.Empty);
+    }
+    public void ClearToggle()
+    {
+        for (int idx = 0; idx < ChannelChildList.Count; ++idx)
+            Destroy(ChannelChildList[idx].gameObject);
+
+        ChannelText.Clear();
+        ChannelChildList.Clear();
+        ChannelList.Clear();
+    }
+    public void ClickToggle(int index)
+    {
+        try
+        {
+            PresentChannel = ChannelList[index];
+            show_Channel();
+        }
+        catch(System.Exception e)
+        {
+            Debug.LogError($"[UIChat] : Channel change Error {e.Message}");
+        }
+    }
     void show_Channel()
     {
         MessageText.text = ChannelText[PresentChannel];
 
-        MessageChatItem = Instantiate(MessagePrefab, MessageParent).GetComponent<ChatItem>();
+        ChatItem MessageChatItem = Instantiate(MessagePrefab, MessageParent).GetComponent<ChatItem>();
         MessageChatItem.Chat_Text.text = ChannelText[PresentChannel];
-        qu_Chatitem.Enqueue(MessageChatItem);
+        Chatitem_Queue.Enqueue(MessageChatItem);
     }
     
     public void Send_Message()
@@ -117,16 +173,17 @@ public class UIChat : AddressableUI, ChatSubscriber
             ChannelText[channel] += $"\n{message}";
             show_Channel();
         }
-        ChennelData newchenneldata = new ChennelData();
-        newchenneldata.sender_id = sender;
-        newchenneldata.text_message = message;
+        ChatItem newchenneldata = new ChatItem();
+        newchenneldata.chat_num = chat_id_number;
+        newchenneldata.chat_sender = sender;
+        newchenneldata.Chat_Text.text = message;
         if (ChannelMassage.TryGetValue(channel, out channel_text_list))
         {
             channel_text_list.Add(newchenneldata);
         }
         else
         {
-            channel_text_list = new List<ChennelData>();
+            channel_text_list = new List<ChatItem>();
             channel_text_list.Add(newchenneldata);
             ChannelMassage.Add(channel, channel_text_list);
         }
