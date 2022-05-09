@@ -2,6 +2,7 @@ using Photon.Chat;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public class UIChat : AddressableUI, ChatSubscriber
@@ -21,24 +22,33 @@ public class UIChat : AddressableUI, ChatSubscriber
     List<ChatItem> channel_text_list;
     private int chat_id_number = 1;
     Queue<ChatItem> Chatitem_Queue;
-    Queue<ChatItem> Chatitem_Pool;
-    Queue<int> text_int;
+    ChatItem[] ChatItem_Circle_Queue;
+    Stack<GameObject> ChatItem_Pool;
+    [SerializeField]const int ChatItem_Queue_Size = 10;
+    int chatitem_index_front = 0;
+    int chatitem_index_rear = 0;
+    int message_load_index;
     [SerializeField] GameObject MessagePrefab;
     [SerializeField] RectTransform MessageParent;
-    [SerializeField] Button CurentChennel;
-    [SerializeField] Button CommunityChennel;
+    [SerializeField] Button Btn_CurentChennel;
+    [SerializeField] Button Btn_CommunityChennel;
+    [SerializeField] Button Btn_BeforeMessageLoad;
+    [SerializeField] Button Btn_AfterMessageLoad;
+    [SerializeField] Button Btn_SendMassage;
+    [SerializeField] GameObject Message_Alarm;
+    [SerializeField] GameObject Chat_Panel;
     Color32 Curent_Chennel_Btn_Color;
     Color32 Other_Chennel_Btn_Color;
+
+    [SerializeField] Button Test_Button;
 
     private void Awake()
     {
         // Channel Toggle 관련
         ChannelChild.gameObject.SetActive(false);
         ChatManager.Instance.Subscribe(this);
-        Chatitem_Pool = new Queue<ChatItem>(10);
-        text_int = new Queue<int>(10);
-        text_int.Enqueue(10);
-        Debug.Log("Queue크기 : " + text_int.Count);
+        ChatItem_Circle_Queue = new ChatItem[ChatItem_Queue_Size];
+        ChatItem_Pool = new Stack<GameObject>();
     }
     // Start is called before the first frame update
     void Start()
@@ -59,71 +69,78 @@ public class UIChat : AddressableUI, ChatSubscriber
     }
     void AddListener()
     {
-        CurentChennel.onClick.AddListener(OnClickCurentChennel);
-        CommunityChennel.onClick.AddListener(OnClickCommunityChennel);
+        Btn_CurentChennel.onClick.AddListener(OnClickCurentChennel);
+        Btn_CommunityChennel.onClick.AddListener(OnClickCommunityChennel);
+        Btn_BeforeMessageLoad.onClick.AddListener(OnClickBeforeMessageLoad);
+        Btn_AfterMessageLoad.onClick.AddListener(OnClickAfterMessageLoad);
+        //Btn_SendMassage.onClick.AddListener(OnclickSend);
+        Message.onSubmit.AddListener(delegate { OnclickSend(); });
+        Test_Button.onClick.AddListener(OnClickMessageTest);
     }
     void OnClickCurentChennel()
     {
-        CurentChennel.image.color = Curent_Chennel_Btn_Color;
-        CommunityChennel.image.color = Other_Chennel_Btn_Color;
+        Btn_CurentChennel.image.color = Curent_Chennel_Btn_Color;
+        Btn_CommunityChennel.image.color = Other_Chennel_Btn_Color;
     }
     void OnClickCommunityChennel()
     {
-        CurentChennel.image.color = Other_Chennel_Btn_Color;
-        CommunityChennel.image.color = Curent_Chennel_Btn_Color;
+        Btn_CurentChennel.image.color = Other_Chennel_Btn_Color;
+        Btn_CommunityChennel.image.color = Curent_Chennel_Btn_Color;
     }
-    public void RefreshChat()
+    void OnClickBeforeMessageLoad()
     {
-        var channelList = ChatManager.Instance.ChatChannel;
-        for (int idx = 0; idx < channelList.Count; ++idx)
-            AddToggle(channelList[idx]);
-        ChannelChildList[0].isOn = true;
-    }
-    public void AddToggle(string _channel)
-    {
-        var newToggle = Instantiate(ChannelChild, ChannelParent.transform);
-        newToggle.gameObject.SetActive(true);
-        ChannelParent.RegisterToggle(newToggle);
+        Btn_BeforeMessageLoad.gameObject.SetActive(false);
+        string channel = "test";
+        channel_text_list = ChannelMassage[channel];
+        if (ChatItem_Circle_Queue[chatitem_index_rear].chat_num - ChatItem_Queue_Size >= 0)
+            message_load_index = ChatItem_Circle_Queue[chatitem_index_rear].chat_num - ChatItem_Queue_Size;
+        else
+            message_load_index = ChatItem_Circle_Queue[chatitem_index_front].chat_num;
+        for (int i = 0; i < 5; i++)
+        {
+            int beforeindex = chatitem_index_rear - i % ChatItem_Queue_Size;
+            if (!(message_load_index - i < 0))
+            {
+                ChatItem_Circle_Queue[beforeindex].gameObject.SetActive(false);
+                ChatItem_Circle_Queue[beforeindex].gameObject.transform.SetAsFirstSibling();
+                ChatItem_Pool.Push(ChatItem_Circle_Queue[beforeindex].gameObject);
+                //chatitem_index_rear = (chatitem_index_rear + 1) % ChatItem_Queue_Size;
 
-        int channelIndex = ChannelList.Count;
-        newToggle.onValueChanged.AddListener
-            (
-                (bool isClick) => 
+                if (ChannelMassage.TryGetValue(channel, out channel_text_list))
                 {
-                    if (isClick) ClickToggle(channelIndex);
+                    ChatItem_Circle_Queue[beforeindex] = PopChatPool().GetComponent<ChatItem>();
+                    ChatItem_Circle_Queue[beforeindex].SetChatData(channel_text_list[message_load_index - i].chat_num, channel_text_list[message_load_index - i].chat_sender, channel_text_list[message_load_index - i].chat_message);
+                    ChatItem_Circle_Queue[beforeindex].gameObject.SetActive(true);
                 }
-            );
-
-        string toggleText = string.Empty;
-        toggleText = _channel;
-        if (_channel.IndexOf('_') != -1)
-            toggleText = toggleText.Substring(0,_channel.IndexOf('_'));
-        newToggle.GetComponentInChildren<Text>().text = toggleText;
-
-        ChannelChildList.Add(newToggle);
-        ChannelList.Add(_channel);
-        ChannelText.Add(_channel, string.Empty);
-    }
-    public void ClearToggle()
-    {
-        for (int idx = 0; idx < ChannelChildList.Count; ++idx)
-            Destroy(ChannelChildList[idx].gameObject);
-
-        ChannelText.Clear();
-        ChannelChildList.Clear();
-        ChannelList.Clear();
-    }
-    public void ClickToggle(int index)
-    {
-        try
-        {
-            PresentChannel = ChannelList[index];
-            show_Channel();
+            }
         }
-        catch(System.Exception e)
+        if(message_load_index - 5 > 0)
         {
-            Debug.LogError($"[UIChat] : Channel change Error {e.Message}");
+            Btn_BeforeMessageLoad.gameObject.transform.SetAsFirstSibling();
+            Btn_BeforeMessageLoad.gameObject.SetActive(true);
         }
+
+    }
+    void OnClickAfterMessageLoad()
+    {
+
+    }
+    public void OnClickMessageTest()
+    {
+        if (Message_Alarm.activeSelf == false && Chat_Panel.activeSelf == false)
+            Message_Alarm.SetActive(true);
+        ChatItem testitme = new ChatItem();
+        testitme.SetChatData(chat_id_number, "테스트", chat_id_number + " [UserID]" + Message.text);
+        Message.text = string.Empty;
+        SetChatItme(testitme);
+    }
+    public void OnClickAbbreviationMessage(string text)
+    {
+        ChatItem testitme = new ChatItem();
+        testitme.SetChatData(chat_id_number, "테스트", chat_id_number + " [UserID]" + text);
+
+        SetChatItme(testitme);
+        //SendMessage(text);
     }
     void show_Channel()
     {
@@ -132,6 +149,48 @@ public class UIChat : AddressableUI, ChatSubscriber
         ChatItem MessageChatItem = Instantiate(MessagePrefab, MessageParent).GetComponent<ChatItem>();
         MessageChatItem.Chat_Text.text = ChannelText[PresentChannel];
         Chatitem_Queue.Enqueue(MessageChatItem);
+    }
+    /// <summary>
+    /// 현재 열려있는 채팅창의 Message에 대한 ObjectFull
+    /// </summary>
+    /// <param name="newMessage"></param>
+    void SetChatItme(ChatItem newMessage)
+    {
+        if ((chatitem_index_rear + 1) % ChatItem_Queue_Size == chatitem_index_front % ChatItem_Queue_Size)
+        {
+            if(!ChatItem_Circle_Queue[chatitem_index_front])
+            {
+                ChatItem_Circle_Queue[chatitem_index_front] = PopChatPool().GetComponent<ChatItem>();
+                ChatItem_Circle_Queue[chatitem_index_front].SetChatData(newMessage.chat_num, newMessage.chat_sender, newMessage.chat_message);
+            }
+            ChatItem_Circle_Queue[chatitem_index_front].gameObject.SetActive(false);
+            ChatItem_Circle_Queue[chatitem_index_front].gameObject.transform.SetAsLastSibling();
+            ChatItem_Pool.Push(ChatItem_Circle_Queue[chatitem_index_front].gameObject);
+            chatitem_index_front = (chatitem_index_front + 1) % ChatItem_Queue_Size;
+            chatitem_index_rear = (chatitem_index_rear + 1) % ChatItem_Queue_Size;
+            Btn_BeforeMessageLoad.gameObject.SetActive(true);
+        }
+        else
+        {
+            chatitem_index_rear = (chatitem_index_rear + 1) % ChatItem_Queue_Size;
+        }
+        ChatItem_Circle_Queue[chatitem_index_rear] = PopChatPool().GetComponent<ChatItem>();
+        ChatItem_Circle_Queue[chatitem_index_rear].SetChatData(newMessage.chat_num, newMessage.chat_sender, newMessage.chat_message);
+        ChatItem_Circle_Queue[chatitem_index_rear].gameObject.SetActive(true);
+        chat_id_number++;
+
+        // 아래 코드는 테스트용. 실제로 서버에 연결해서 사용할시에는 삭제필요.
+        string channel = "test";
+        if (ChannelMassage.TryGetValue(channel, out channel_text_list))
+        {
+            channel_text_list.Add(newMessage);
+        }
+        else
+        {
+            channel_text_list = new List<ChatItem>();
+            channel_text_list.Add(newMessage);
+            ChannelMassage.Add(channel, channel_text_list);
+        }
     }
     
     public void Send_Message()
@@ -158,7 +217,7 @@ public class UIChat : AddressableUI, ChatSubscriber
         if (Input.GetKey(KeyCode.Return) || Input.GetKey(KeyCode.KeypadEnter))
             Send_Message();
     }
-    public void Send_Click()
+    public void OnclickSend()
     {
         if (this.Message == null)
             return;
@@ -187,6 +246,7 @@ public class UIChat : AddressableUI, ChatSubscriber
             channel_text_list.Add(newchenneldata);
             ChannelMassage.Add(channel, channel_text_list);
         }
+        SetChatItme(newchenneldata);
     }
 
     void ChatSubscriber.OnSubscribe()
@@ -197,5 +257,15 @@ public class UIChat : AddressableUI, ChatSubscriber
     void ChatSubscriber.UnSubscribe()
     {
 
+    }
+    GameObject PopChatPool()
+    {
+        if (ChatItem_Pool.Count > 0)
+            return ChatItem_Pool.Pop();
+        else
+        {
+            GameObject newMessage = Instantiate(MessagePrefab, MessageParent);
+            return newMessage;
+        }
     }
 }
