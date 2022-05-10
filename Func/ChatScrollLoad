@@ -1,0 +1,61 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.EventSystems;
+
+public class ChatScrollLoad : MonoBehaviour, IBeginDragHandler, IEndDragHandler
+{
+    [SerializeField] ChatMessage LoadMessage;
+
+    Vector2 StartDragingPos;
+    bool isDrag = false;
+
+    public enum AnchorPresets
+    {
+        ScrollUp,
+        ScrollDown
+    }
+
+    public void OnBeginDrag(PointerEventData eventData)
+    {
+        StartDragingPos = eventData.position;
+    }
+
+    public void OnEndDrag(PointerEventData eventData)
+    {
+        isDrag = false;
+        float Yscroll = Mathf.Abs(eventData.position.y) + 100f;
+        SetPos(Yscroll);
+    }
+
+    void SetPos(float Ypos)
+    {
+        if (Ypos < StartDragingPos.y)
+        {
+            SetAnchor(AnchorPresets.ScrollUp);
+            Debug.Log("Scroll UP");
+        }
+        else if (Ypos >= StartDragingPos.y)
+        {
+            SetAnchor(AnchorPresets.ScrollDown);
+            Debug.Log("Scroll Down");
+        }
+    }
+
+    void SetAnchor(AnchorPresets allign)
+    {
+        switch (allign)
+        {
+            case (AnchorPresets.ScrollUp):
+                {
+                    LoadMessage.BeforeMessageLoad();
+                    break;
+                }
+            case (AnchorPresets.ScrollDown):
+                {
+                    LoadMessage.AfterMessageLoad();
+                    break;
+                }
+        }
+    }
+}
