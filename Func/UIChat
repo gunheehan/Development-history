@@ -8,7 +8,6 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public class UIChat : AddressableUI, IChatClientListener
-//public class UIChat : MonoBehaviour, IChatClientListener
 {
     [SerializeField] ChatMessage chatMessage;
     
@@ -123,10 +122,8 @@ public class UIChat : AddressableUI, IChatClientListener
     void Initialize()
     {
         this.chatClient = new ChatClient(this);
-        //this.chatAppSettings = PhotonNetwork.PhotonServerSettings.AppSettings.GetChatSettings();
-        //this.chatClient.ConnectUsingSettings(this.chatAppSettings);
-        chatClient = new ChatClient(this); //this객체로 콜백을 받겠다
-        chatClient.Connect(this.appId, "1", new AuthenticationValues(this.username)); //유저네임으로 연결되도록
+        chatClient = new ChatClient(this);
+        chatClient.Connect(this.appId, "1", new AuthenticationValues(this.username));
         this.chatClient.MessageLimit = 50;
     }
     void setname()
@@ -137,7 +134,6 @@ public class UIChat : AddressableUI, IChatClientListener
     public void InitChat()
     {
         ChatChannel.Clear();
-        //ChatChannel.Add(PhotonNetwork.CurrentRoom.Name);
         ChatChannel.Add("test");
         ChatChannel.Add("Community");
         ChatClient.Subscribe(ChatChannel.ToArray());
