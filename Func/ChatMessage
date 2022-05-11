@@ -1,4 +1,5 @@
 using Photon.Chat;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -7,34 +8,40 @@ using UnityEngine.UI;
 
 public class ChatMessage : MonoBehaviour
 {
-    [SerializeField] InputField Message;
+    [SerializeField] UIChat UIchat;
+
+    [Header("ChannelMessage")]
+    [SerializeField] InputField Message_Field;
+    [SerializeField] int ChatItem_Queue_Size = 10;
 
     Dictionary<string, List<ChatItem>> ChannelMassage = new Dictionary<string, List<ChatItem>>();
     List<ChatItem> channel_text_list;
     ChatItem[] ChatItem_Circle_Queue;
     Stack<GameObject> ChatItem_Pool;
-    [SerializeField]const int ChatItem_Queue_Size = 10;
     int chatitem_index_front = 0;
     int chatitem_index_rear = 0;
+
+    [Header("ReferenceObject")]
     [SerializeField] GameObject MessagePrefab;
     [SerializeField] RectTransform MessageParent;
-    [SerializeField] Button Btn_CurentChennel;
-    [SerializeField] Button Btn_CommunityChennel;
     [SerializeField] GameObject Message_Alarm;
     [SerializeField] GameObject Chat_Panel;
+    [SerializeField] Button Btn_SendMessage;
+
+    [Header("ChannelButton")]
+    [SerializeField] Button Btn_CurentChennel;
+    [SerializeField] Button Btn_CommunityChennel;
     Color32 Curent_Chennel_Btn_Color;
     Color32 Other_Chennel_Btn_Color;
-    int message_unique_number = 1;
 
     [Header("ChannelLoadData")]
-    [SerializeField] string CurentChannel = "test";
-    [SerializeField] int LoadSize = 5;
+    public string CurentChannel = "test";
+    [SerializeField] int MessageLoadSize = 5;
     int front_num;
     int back_num;
     int load_num_index;
     bool scroll_load_ing = false;
 
-    [SerializeField] Button Btn_SendMessage;
 
     private void Awake()
     {
@@ -46,67 +53,164 @@ public class ChatMessage : MonoBehaviour
     {
         Curent_Chennel_Btn_Color = new Color32(255, 255, 255, 255);
         Other_Chennel_Btn_Color = new Color32(192, 192, 192, 255);
+        Btn_SendMessage.gameObject.SetActive(true);
+        //Btn_CurentChennel.image.color = Curent_Chennel_Btn_Color;
+        //Btn_CommunityChennel.image.color = Other_Chennel_Btn_Color;
         AddListener();
     }
     void AddListener()
     {
         Btn_CurentChennel.onClick.AddListener(OnClickCurentChennel);
         Btn_CommunityChennel.onClick.AddListener(OnClickCommunityChennel);
-        Btn_SendMessage.onClick.AddListener(()=> OnClickSendMessage());
+        Btn_SendMessage.onClick.AddListener(() => OnClickSendMessage());
+        Message_Field.onValueChanged.AddListener(ObservedInputField);
+        //Message_Field.onEndEdit.AddListener(text => OnclickMobileInputFieldDone());
     }
     void OnClickCurentChennel()
     {
         Btn_CurentChennel.image.color = Curent_Chennel_Btn_Color;
         Btn_CommunityChennel.image.color = Other_Chennel_Btn_Color;
+
+        ResetMessageQueuePool();
+        CurentChannel = "test";
+        if (ChannelMassage.ContainsKey(CurentChannel))
+            ResetMessageQueue();
     }
     void OnClickCommunityChennel()
     {
         Btn_CurentChennel.image.color = Other_Chennel_Btn_Color;
         Btn_CommunityChennel.image.color = Curent_Chennel_Btn_Color;
+
+        ResetMessageQueuePool();
+        CurentChannel = "Community";
+        if (ChannelMassage.ContainsKey(CurentChannel))
+            ResetMessageQueue();
     }
     public void OnClickSendMessage(string newmessage = null)
     {
-        if (string.IsNullOrEmpty(Message.text) && string.IsNullOrEmpty(newmessage))
+        if (string.IsNullOrEmpty(Message_Field.text) && string.IsNullOrEmpty(newmessage))
             return;
         if (Message_Alarm.activeSelf == false && Chat_Panel.activeSelf == false)
             Message_Alarm.SetActive(true);
-        ChatItem testitme = new ChatItem();
+        ChatItem newitme = new ChatItem();
         if(string.IsNullOrEmpty(newmessage))
         {
-            testitme.SetChatData("고라니", " [UserID] : " + Message.text);
-            Message.text = string.Empty;
+            //newitme.SetChatData("고라니", " [UserID] : " + Message_Field.text);
+            UIchat.ChatClient.PublishMessage(CurentChannel, Message_Field.text);
+            Message_Field.text = string.Empty;
         }
         else
-            testitme.SetChatData("고라니", " [UserID] : " + newmessage);
-
-        SetChatItme(testitme);
+        {
+            //newitme.SetChatData("고라니", " [UserID] : " + newmessage);
+            UIchat.ChatClient.PublishMessage(CurentChannel, newmessage);
+        }
+        //MessageClassification(CurentChannel, newitme);
     }
-    /// <summary>
-    /// 현재 열려있는 채팅창의 Message에 대한 ObjectFull
-    /// </summary>
-    /// <param name="newMessage"></param>
-    public void SetChatItme(ChatItem newMessage)
+    void ObservedInputField(string text)
     {
-        newMessage.chat_num = message_unique_number;
-        if (ChannelMassage.TryGetValue(CurentChannel, out channel_text_list))
+        if (String.IsNullOrEmpty(text))
+            Btn_SendMessage.gameObject.SetActive(false);
+        else
+            Btn_SendMessage.gameObject.SetActive(true);
+    }
+    void OnclickMobileInputFieldDone()
+    {
+        if (Message_Field.touchScreenKeyboard.status == TouchScreenKeyboard.Status.Done)
         {
-            channel_text_list.Add(newMessage);
+            Debug.Log("Enter");
+            OnClickSendMessage();
+        }
+    }
+    void ResetMessageQueue()
+    {
+        scroll_load_ing = false;
+        //ResetMessageQueuePool();
+        //chatitem_index_front = 0;
+        //chatitem_index_rear = ChatItem_Queue_Size - 1;
+        channel_text_list = ChannelMassage[CurentChannel];
+        int load_num;
+        if (channel_text_list.Count > ChatItem_Queue_Size)
+            load_num = channel_text_list.Count - ChatItem_Queue_Size;
+        else
+            load_num = 0;
+        for (int i = load_num; i < channel_text_list.Count; i++)
+        {
+            SetChatItme(channel_text_list[i]);
+            ChatItem_Circle_Queue[chatitem_index_rear].gameObject.transform.SetAsLastSibling();
+        }
+    }
+    void ResetMessageQueuePool()
+    {
+        chatitem_index_front = 0;
+        chatitem_index_rear = 0;
+        channel_text_list = ChannelMassage[CurentChannel];
+        int reset_size;
+        if (channel_text_list.Count > ChatItem_Queue_Size)
+            reset_size = ChatItem_Queue_Size;
+        else
+            reset_size = channel_text_list.Count;
+        if(!(channel_text_list.Count <= 0))
+        {
+            for (int i = 0; i < reset_size; i++)
+            {
+                //chatitem_index_rear = (chatitem_index_rear + 1) % ChatItem_Queue_Size;
+                //ChatItem_Circle_Queue[chatitem_index_rear].gameObject.SetActive(false);
+                //ChatItem_Circle_Queue[chatitem_index_rear].gameObject.transform.SetAsFirstSibling();
+                //ChatItem_Pool.Push(ChatItem_Circle_Queue[chatitem_index_rear].gameObject);
+                ChatItem_Circle_Queue[i].gameObject.SetActive(false);
+                ChatItem_Circle_Queue[i].gameObject.transform.SetAsFirstSibling();
+                ChatItem_Pool.Push(ChatItem_Circle_Queue[i].gameObject);
+            }
+            chatitem_index_rear = 0;
+        }
+    }
+    public void MessageClassification(string channelname, ChatItem channeldata)
+    {
+        if(channelname.Equals(CurentChannel))
+        {
+            if (ChannelMassage.TryGetValue(CurentChannel, out channel_text_list))
+            {
+                channeldata.chat_num = channel_text_list[channel_text_list.Count - 1].chat_num + 1;
+                channel_text_list.Add(channeldata);
+            }
+            else
+            {
+                channel_text_list = new List<ChatItem>();
+                channeldata.chat_num = 1;
+                channel_text_list.Add(channeldata);
+                ChannelMassage.Add(CurentChannel, channel_text_list);
+            }
+            SetChatItme(channeldata);
         }
         else
         {
-            channel_text_list = new List<ChatItem>();
-            channel_text_list.Add(newMessage);
-            ChannelMassage.Add(CurentChannel, channel_text_list);
+            if(UIchat.ChatChannel.Contains(channelname))
+            {
+                if (ChannelMassage.TryGetValue(channelname, out channel_text_list))
+                {
+                    channeldata.chat_num = channel_text_list[channel_text_list.Count - 1].chat_num + 1;
+                    channel_text_list.Add(channeldata);
+                }
+                else
+                {
+                    channel_text_list = new List<ChatItem>();
+                    channeldata.chat_num = 1;
+                    channel_text_list.Add(channeldata);
+                    ChannelMassage.Add(CurentChannel, channel_text_list);
+                }
+            }
         }
-
+    }
+    void SetChatItme(ChatItem newMessage)
+    {
         if (!scroll_load_ing)
         {
             if ((chatitem_index_rear + 1) % ChatItem_Queue_Size == chatitem_index_front % ChatItem_Queue_Size)
             {
                 if (!ChatItem_Circle_Queue[chatitem_index_front])
                 {
-                    ChatItem_Circle_Queue[chatitem_index_front] = PopChatPool().GetComponent<ChatItem>();
-                    ChatItem_Circle_Queue[chatitem_index_front].chat_num = message_unique_number;
+                    ChatItem_Circle_Queue[chatitem_index_front] = PopChatMessagePool().GetComponent<ChatItem>();
+                    ChatItem_Circle_Queue[chatitem_index_front].chat_num = newMessage.chat_num;
                     ChatItem_Circle_Queue[chatitem_index_front].SetChatData(newMessage.chat_sender, newMessage.chat_message);
                 }
                 ChatItem_Circle_Queue[chatitem_index_front].gameObject.SetActive(false);
@@ -119,12 +223,12 @@ public class ChatMessage : MonoBehaviour
             {
                 chatitem_index_rear = (chatitem_index_rear + 1) % ChatItem_Queue_Size;
             }
-            ChatItem_Circle_Queue[chatitem_index_rear] = PopChatPool().GetComponent<ChatItem>();
-            ChatItem_Circle_Queue[chatitem_index_rear].chat_num = message_unique_number;
+            ChatItem_Circle_Queue[chatitem_index_rear] = PopChatMessagePool().GetComponent<ChatItem>();
+            ChatItem_Circle_Queue[chatitem_index_rear].chat_num = newMessage.chat_num;
             ChatItem_Circle_Queue[chatitem_index_rear].SetChatData(newMessage.chat_sender, newMessage.chat_message);
             ChatItem_Circle_Queue[chatitem_index_rear].gameObject.SetActive(true);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(MessageParent.gameObject.GetComponent<RectTransform>());
         }
-        message_unique_number++;
     }
     public void BeforeMessageLoad()
     {
@@ -141,7 +245,7 @@ public class ChatMessage : MonoBehaviour
         if (load_num_index > 0)
             scroll_load_ing = true;
 
-        for (int i = 0; i < LoadSize; i++)
+        for (int i = 0; i < MessageLoadSize; i++)
         {
             load_num_index--;
             if (!(load_num_index < 0))
@@ -157,7 +261,7 @@ public class ChatMessage : MonoBehaviour
                 if (back_num < 0)
                     back_num = (ChatItem_Queue_Size - 1) % ChatItem_Queue_Size;
                 
-                ChatItem_Circle_Queue[back_num] = PopChatPool().GetComponent<ChatItem>();
+                ChatItem_Circle_Queue[back_num] = PopChatMessagePool().GetComponent<ChatItem>();
                 ChatItem_Circle_Queue[back_num].chat_num = channel_text_list[load_num_index].chat_num;
                 ChatItem_Circle_Queue[back_num].SetChatData(channel_text_list[load_num_index].chat_sender, channel_text_list[load_num_index].chat_message);
                 ChatItem_Circle_Queue[back_num].gameObject.SetActive(true);
@@ -165,6 +269,7 @@ public class ChatMessage : MonoBehaviour
         }
         chatitem_index_front = back_num;
         chatitem_index_rear = front_num;
+        LayoutRebuilder.ForceRebuildLayoutImmediate(MessageParent.gameObject.GetComponent<RectTransform>());
     }
     public void AfterMessageLoad()
     {
@@ -174,7 +279,7 @@ public class ChatMessage : MonoBehaviour
         back_num = chatitem_index_front;
         load_num_index = ChatItem_Circle_Queue[front_num].chat_num;
 
-        for (int i = 0; i < LoadSize; i++)
+        for (int i = 0; i < MessageLoadSize; i++)
         {
             if (load_num_index < message_size)
             {
@@ -185,7 +290,7 @@ public class ChatMessage : MonoBehaviour
                 front_num = (front_num + 1) % ChatItem_Queue_Size;
                 back_num = (back_num + 1) % ChatItem_Queue_Size;
 
-                ChatItem_Circle_Queue[front_num] = PopChatPool().GetComponent<ChatItem>();
+                ChatItem_Circle_Queue[front_num] = PopChatMessagePool().GetComponent<ChatItem>();
                 ChatItem_Circle_Queue[front_num].chat_num = channel_text_list[load_num_index].chat_num;
                 ChatItem_Circle_Queue[front_num].SetChatData(channel_text_list[load_num_index].chat_sender, channel_text_list[load_num_index].chat_message);
                 ChatItem_Circle_Queue[front_num].gameObject.SetActive(true);
@@ -195,9 +300,10 @@ public class ChatMessage : MonoBehaviour
         if (load_num_index >= message_size)
             scroll_load_ing = false;
         chatitem_index_front = back_num;
-        chatitem_index_rear = front_num;
+        chatitem_index_rear = front_num; 
+        LayoutRebuilder.ForceRebuildLayoutImmediate(MessageParent.gameObject.GetComponent<RectTransform>());
     }
-    GameObject PopChatPool()
+    GameObject PopChatMessagePool()
     {
         if (ChatItem_Pool.Count > 0)
             return ChatItem_Pool.Pop();
