@@ -1,159 +1,203 @@
+using ExitGames.Client.Photon;
 using Photon.Chat;
+using Photon.Pun;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class UIChat : AddressableUI, ChatSubscriber
+public class UIChat : AddressableUI, IChatClientListener
+//public class UIChat : MonoBehaviour, IChatClientListener
 {
     [SerializeField] ChatMessage chatMessage;
-    [Header("Channel")]
-    [SerializeField] ToggleGroup ChannelParent;
-    [SerializeField] Toggle ChannelChild;
-    List<Toggle> ChannelChildList = new List<Toggle>();
-    string PresentChannel;
-
-    List<string> ChannelList = new List<string>();
-    Dictionary<string, string> ChannelText = new Dictionary<string, string>();
+    
     [SerializeField] InputField Message;
-    [SerializeField] Text MessageText;
 
-    List<ChatItem> channel_text_list;
-    private int chat_id_number = 1;
+    [Header("Message Panel State")]
+    [SerializeField] RectTransform Chat_Panel_Rect;
+    [SerializeField] GameObject Abbreviation_Object;
 
-    [SerializeField] Button Btn_SendMassage;
+    [Header("Message Panel Fuction")]
+    [SerializeField] Button Btn_Camera;
+    [SerializeField] Button Btn_Emoticon;
+    [SerializeField] Button Btn_AbbreviationOn;
+    [SerializeField] Button Btn_Plus;
+    [SerializeField] Button Btn_Hide;
+    [SerializeField] GameObject Message_Alarm_Object;
+
+    [Header("Subscribe Channel")]
+    public List<string> ChatChannel = new List<string>();
+    protected internal ChatAppSettings chatAppSettings;
+    string appId;
+    ChatClient chatClient;
+
+    public string username;
 
     private void Awake()
     {
-        // Channel Toggle 관련
-        ChannelChild.gameObject.SetActive(false);
-        ChatManager.Instance.Subscribe(this);
+        Hide_Message(true);
+        AddListener();
+        Chat_Panel_Rect.gameObject.SetActive(false);
+        Abbreviation_Object.SetActive(false);
     }
+    #region Button Controll
+    void AddListener()
+    {
+        Btn_Camera.onClick.AddListener(OnClickCamera);
+        Btn_Emoticon.onClick.AddListener(OnClickEmoticon);
+        Btn_AbbreviationOn.onClick.AddListener(OnClickAbbreviation);
+        Btn_Plus.onClick.AddListener(OnClickPlus);
+        Btn_Hide.onClick.AddListener(OnClickHideButton);
+    }
+    void OnClickAbbreviation()
+    {
+        if (Message_Alarm_Object.activeSelf == true)
+            Message_Alarm_Object.SetActive(false);
+        Chat_Panel_Rect.gameObject.SetActive(true);
+        Hide_Message(false);
+        Abbreviation_Object.SetActive(true);
+    }
+    void OnClickHideButton()
+    {
+        Hide_Message(true);
+    }
+    void OnClickCamera()
+    { }
+    void OnClickEmoticon()
+    { }
+    void OnClickPlus()
+    { }
+
+    public void Hide_Message(bool isHide = true)
+    {
+        var Target = isHide ? new Vector2(-Screen.width + 40, 0) : Vector2.zero;
+        StartCoroutine(Hide_Process(Target, isHide));
+    }
+    IEnumerator Hide_Process(Vector2 _Target, bool _IsHide)
+    {
+        Vector2 CurSize = Chat_Panel_Rect.sizeDelta;
+        float Timer = 0;
+
+        while (true)
+        {
+            Timer += Time.deltaTime;
+            if (Timer >= 1)
+            {
+                Chat_Panel_Rect.sizeDelta = _Target;
+                break;
+            }
+            Chat_Panel_Rect.sizeDelta = Vector2.Lerp(CurSize, _Target, Timer);
+            yield return null;
+        }
+        if (_IsHide)
+        {
+            Chat_Panel_Rect.gameObject.SetActive(false);
+            Abbreviation_Object.SetActive(false);
+        }
+    }
+    #endregion
     // Start is called before the first frame update
     void Start()
     {
-        ChatManager.Instance.ChatAccount = "테스트중";
-        Btn_SendMassage.onClick.AddListener(OnclickSend);
+        setname();
+        appId = PhotonNetwork.PhotonServerSettings.AppSettings.AppIdChat;
+        Initialize();
     }
-    public override void OpenUI()
+    void Update()
     {
-        base.OpenUI();
-    }
-    public override void CloseUI()
-    {
-        ChatManager.Instance.UnSubscribe(this);
-        base.CloseUI();
-    }
-    public void RefreshChat()
-    {
-        var channelList = ChatManager.Instance.ChatChannel;
-        for (int idx = 0; idx < channelList.Count; ++idx)
-            AddToggle(channelList[idx]);
-        ChannelChildList[0].isOn = true;
-    }
-    public void AddToggle(string _channel)
-    {
-        var newToggle = Instantiate(ChannelChild, ChannelParent.transform);
-        newToggle.gameObject.SetActive(true);
-        ChannelParent.RegisterToggle(newToggle);
-
-        int channelIndex = ChannelList.Count;
-        newToggle.onValueChanged.AddListener
-            (
-                (bool isClick) => 
-                {
-                    if (isClick) ClickToggle(channelIndex);
-                }
-            );
-
-        string toggleText = string.Empty;
-        toggleText = _channel;
-        if (_channel.IndexOf('_') != -1)
-            toggleText = toggleText.Substring(0,_channel.IndexOf('_'));
-        newToggle.GetComponentInChildren<Text>().text = toggleText;
-
-        ChannelChildList.Add(newToggle);
-        ChannelList.Add(_channel);
-        ChannelText.Add(_channel, string.Empty);
-    }
-    public void ClearToggle()
-    {
-        for (int idx = 0; idx < ChannelChildList.Count; ++idx)
-            Destroy(ChannelChildList[idx].gameObject);
-
-        ChannelText.Clear();
-        ChannelChildList.Clear();
-        ChannelList.Clear();
-    }
-    public void ClickToggle(int index)
-    {
-        try
+        if(this.chatClient != null)
         {
-            PresentChannel = ChannelList[index];
-            show_Channel();
-        }
-        catch(System.Exception e)
-        {
-            Debug.LogError($"[UIChat] : Channel change Error {e.Message}");
+            this.chatClient.Service();
         }
     }
-    void show_Channel()
+    public ChatClient ChatClient
     {
-        MessageText.text = ChannelText[PresentChannel];
-    }
-    
-    public void Send_Message()
-    {
-        ChatManager.Instance.SendMessage(PresentChannel, this.Message.text);
-        //this.Message.text = string.Empty;
-    }
-    public void Send_Message(string _Message)
-    {
-        ChatManager.Instance.SendMessage(PresentChannel, _Message);
-        this.Message.text = string.Empty;
-    }
-    public void Send_Submit()
-    {
-        if (this.Message == null)
-            return;
-
-        if (Input.GetKey(KeyCode.Escape))
+        get
         {
-            this.Message.text = null;
-            return;
+            if (chatClient == null)
+                Initialize();
+            return chatClient;
         }
-
-        if (Input.GetKey(KeyCode.Return) || Input.GetKey(KeyCode.KeypadEnter))
-            Send_Message();
     }
-    public void OnclickSend()
+    void Initialize()
     {
-        if (this.Message == null)
-            return;
-
-        Send_Message();
+        this.chatClient = new ChatClient(this);
+        //this.chatAppSettings = PhotonNetwork.PhotonServerSettings.AppSettings.GetChatSettings();
+        //this.chatClient.ConnectUsingSettings(this.chatAppSettings);
+        chatClient = new ChatClient(this); //this객체로 콜백을 받겠다
+        chatClient.Connect(this.appId, "1", new AuthenticationValues(this.username)); //유저네임으로 연결되도록
+        this.chatClient.MessageLimit = 50;
+    }
+    void setname()
+    {
+        username = Random.Range(0, 10).ToString();
+        PlayerManager.Data.AvatarData.Nickname = username;
+    }
+    public void InitChat()
+    {
+        ChatChannel.Clear();
+        //ChatChannel.Add(PhotonNetwork.CurrentRoom.Name);
+        ChatChannel.Add("test");
+        ChatChannel.Add("Community");
+        ChatClient.Subscribe(ChatChannel.ToArray());
     }
 
-    void ChatSubscriber.OnUpdateMessage(string channel, string sender, string message)
+    #region PhotonChatCallBack
+    public void DebugReturn(DebugLevel level, string message)
     {
-        if(ChannelText.ContainsKey(channel))
+    }
+
+    public void OnDisconnected()
+    {
+        Debug.Log("접속 실패");
+    }
+
+    public void OnConnected()
+    {
+        Debug.Log("접속 성공");
+        InitChat();
+        this.chatClient.SetOnlineStatus(ChatUserStatus.Online);
+    }
+
+    public void OnChatStateChange(ChatState state)
+    {
+    }
+
+    public void OnGetMessages(string channelName, string[] senders, object[] messages)
+    {
+        for(int i = 0; i < messages.Length; i++)
         {
-            ChannelText[channel] += $"\n{message}";
-            show_Channel();
+            ChatItem newchenneldata = new ChatItem();
+            string message = messages[i] as string;
+            newchenneldata.SetChatData(senders[i], message);
+            chatMessage.MessageClassification(channelName, newchenneldata);
         }
-        ChatItem newchenneldata = new ChatItem();
-        newchenneldata.SetChatData(chat_id_number, sender, message);
-        chatMessage.SetChatItme(newchenneldata);
     }
 
-    void ChatSubscriber.OnSubscribe()
+    public void OnPrivateMessage(string sender, object message, string channelName)
     {
-
     }
 
-    void ChatSubscriber.UnSubscribe()
+    public void OnSubscribed(string[] channels, bool[] results)
     {
-
+        Debug.Log(string.Format("채널 입장 ({0})", string.Join(",", channels)));
     }
+
+    public void OnUnsubscribed(string[] channels)
+    {
+    }
+
+    public void OnStatusUpdate(string user, int status, bool gotMessage, object message)
+    {
+    }
+
+    public void OnUserSubscribed(string channel, string user)
+    {
+    }
+
+    public void OnUserUnsubscribed(string channel, string user)
+    {
+    }
+    #endregion
 }
