@@ -71,20 +71,35 @@ public class ChatMessage : MonoBehaviour
         Btn_CurentChennel.image.color = Curent_Chennel_Btn_Color;
         Btn_CommunityChennel.image.color = Other_Chennel_Btn_Color;
 
-        ResetMessageQueuePool();
+        if(ChannelMassage.ContainsKey(CurentChannel))
+        {
+            channel_text_list = ChannelMassage[CurentChannel];
+            if (channel_text_list.Count > 0)
+            {
+                ResetMessageQueuePool();
+                CurentChannel = "test";
+                ResetMessageQueue();
+            }
+        }
+
         CurentChannel = "test";
-        if (ChannelMassage.ContainsKey(CurentChannel))
-            ResetMessageQueue();
     }
     void OnClickCommunityChennel()
     {
         Btn_CurentChennel.image.color = Other_Chennel_Btn_Color;
         Btn_CommunityChennel.image.color = Curent_Chennel_Btn_Color;
 
-        ResetMessageQueuePool();
-        CurentChannel = "Community";
         if (ChannelMassage.ContainsKey(CurentChannel))
-            ResetMessageQueue();
+        {
+            channel_text_list = ChannelMassage[CurentChannel];
+            if (channel_text_list.Count > 0)
+            {
+                ResetMessageQueuePool();
+                CurentChannel = "Community";
+                ResetMessageQueue();
+            }
+        }
+        CurentChannel = "Community";
     }
     public void OnClickSendMessage(string newmessage = null)
     {
@@ -124,9 +139,7 @@ public class ChatMessage : MonoBehaviour
     void ResetMessageQueue()
     {
         scroll_load_ing = false;
-        //ResetMessageQueuePool();
-        //chatitem_index_front = 0;
-        //chatitem_index_rear = ChatItem_Queue_Size - 1;
+
         channel_text_list = ChannelMassage[CurentChannel];
         int load_num;
         if (channel_text_list.Count > ChatItem_Queue_Size)
@@ -153,10 +166,6 @@ public class ChatMessage : MonoBehaviour
         {
             for (int i = 0; i < reset_size; i++)
             {
-                //chatitem_index_rear = (chatitem_index_rear + 1) % ChatItem_Queue_Size;
-                //ChatItem_Circle_Queue[chatitem_index_rear].gameObject.SetActive(false);
-                //ChatItem_Circle_Queue[chatitem_index_rear].gameObject.transform.SetAsFirstSibling();
-                //ChatItem_Pool.Push(ChatItem_Circle_Queue[chatitem_index_rear].gameObject);
                 ChatItem_Circle_Queue[i].gameObject.SetActive(false);
                 ChatItem_Circle_Queue[i].gameObject.transform.SetAsFirstSibling();
                 ChatItem_Pool.Push(ChatItem_Circle_Queue[i].gameObject);
