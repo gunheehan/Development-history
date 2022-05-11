@@ -137,6 +137,7 @@ public class UIChat : AddressableUI, IChatClientListener
         ChatChannel.Add("test");
         ChatChannel.Add("Community");
         ChatClient.Subscribe(ChatChannel.ToArray());
+        chatMessage.CurentChannel = ChatChannel[0];
     }
 
     #region PhotonChatCallBack
@@ -147,6 +148,7 @@ public class UIChat : AddressableUI, IChatClientListener
     public void OnDisconnected()
     {
         Debug.Log("접속 실패");
+        Initialize();
     }
 
     public void OnConnected()
@@ -162,11 +164,12 @@ public class UIChat : AddressableUI, IChatClientListener
 
     public void OnGetMessages(string channelName, string[] senders, object[] messages)
     {
+        Debug.Log("GetMessage");
         for(int i = 0; i < messages.Length; i++)
         {
             ChatItem newchenneldata = new ChatItem();
             string message = messages[i] as string;
-            newchenneldata.SetChatData(senders[i], message);
+            newchenneldata.SetChatData(senders[i], "[" + senders[i] + "] :" + message);
             chatMessage.MessageClassification(channelName, newchenneldata);
         }
     }
