@@ -82,7 +82,7 @@ public class UIPostComment : AddressableUI
     /// <param name="newcomment"></param>
     void GetRecommentData(reply[] newcomment)
     {
-        for(int i = 0; i < newcomment.Length; i++)
+        for (int i = 0; i < newcomment.Length; i++)
         {
             CommentItem newcommented = new CommentItem();
             if (newcomment[i].top_comment_id == 0)
@@ -120,7 +120,7 @@ public class UIPostComment : AddressableUI
                 {
                     CommentItem newcommented = PopCommentPool().GetComponent<CommentItem>();
                     Parent_object = Comment_Data[parentindex];
-                    newcommented.SetCommentData(Comment_list[i].thiscomment, Parent_object[0].gameObject.transform.GetSiblingIndex());
+                    newcommented.SetCommentData(Comment_list[Comment_list.Count - i].thiscomment, Parent_object[0].gameObject.transform.GetSiblingIndex());
 
                     if (Comment_Stack_Pool.TryGetValue(parentindex, out Comment_Stack))
                     {
@@ -137,10 +137,10 @@ public class UIPostComment : AddressableUI
                 }
                 else
                 {
-                    if(Comment_Stack_Pool.TryGetValue(parentindex, out Comment_Stack))
+                    if (Comment_Stack_Pool.TryGetValue(parentindex, out Comment_Stack))
                     {
                         CommentItem newcommented = Comment_Stack.Pop().GetComponent<CommentItem>();
-                        Comment_list[Comment_list.Count - i].thiscomment = newcommented.thiscomment;
+                        Comment_list[i].thiscomment = newcommented.thiscomment;
                         newcommented.gameObject.SetActive(false);
                         newcommented.gameObject.transform.SetAsLastSibling();
                         CommentPool.Push(newcommented.gameObject);
