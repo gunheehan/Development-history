@@ -76,8 +76,40 @@ public class UIPostComment : AddressableUI
             comment_id_number++;
         }
     }
+    /// <summary>
+    /// 데이터를 읽어오는 구문. 형식 및 초기화는 Struct 확인 후 추가 구현 및 변경 필요.(수신부)
+    /// </summary>
+    /// <param name="newcomment"></param>
+    void GetRecommentData(reply[] newcomment)
+    {
+        for(int i = 0; i < newcomment.Length; i++)
+        {
+            CommentItem newcommented = new CommentItem();
+            if (newcomment[i].top_comment_id == 0)
+            {
+                newcommented.SetCommentData(newcomment[i]);
+                Comment_list = new List<CommentItem>();
+                Comment_list.Add(newcommented);
+                Comment_Data.Add(newcomment[i].comment_id, Comment_list);
+                newcommented.gameObject.SetActive(true);
+            }
+            else
+            {
+                Comment_list = Comment_Data[parent_top_comment_id];
+                Comment_list.Add(newcommented);
+                Parent_object[0].SetReCommentCount(Comment_list.Count - 1);
+                newcommented.SetCommentData(newcomment[i], Parent_object[0].gameObject.transform.GetSiblingIndex());
+                newcommented.gameObject.SetActive(false);
+            }
+            comment_id_number++;
+        }
+    }
 
-
+    /// <summary>
+    /// 해당 댓글의 대댓글 데이터를 가져와서 오브젝트에 데이터를 할당 및 회수 하는 구문.
+    /// </summary>
+    /// <param name="parentindex"> : Top_comment_ID</param>
+    /// <param name="state"> : 대댓글 활성화 유무 true : 댓글보기 false : 댓글닫기</param>
     public void SetRcommentDIsplay(int parentindex, bool state)
     {
         if (Comment_Data.TryGetValue(parentindex, out Comment_list))
@@ -117,6 +149,9 @@ public class UIPostComment : AddressableUI
             }
         }
     }
+    /// <summary>
+    /// 댓글 데이터를 추가 구문.(전송부)
+    /// </summary>
     public void OnClickAddComment()
     {
         reply newcomment = new reply();
@@ -133,7 +168,7 @@ public class UIPostComment : AddressableUI
             Comment_list = new List<CommentItem>();
             Comment_list.Add(newcommented);
             Comment_Data.Add(newcomment.comment_id, Comment_list);
-            newcommented.transform.SetAsLastSibling();
+            newcommented.transform.SetAsFirstSibling();
             newcommented.gameObject.SetActive(true);
             LayoutRebuilder.ForceRebuildLayoutImmediate(newcommented.gameObject.GetComponent<RectTransform>());
         }
