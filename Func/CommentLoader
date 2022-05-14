@@ -8,17 +8,9 @@ using UnityEngine.UI;
 public class CommentLoader : MonoBehaviour
 {
     [SerializeField] GameObject CommentitemPrefab;
-    [SerializeField] RectTransform RootUIrect;
     [SerializeField] Button Btn_enter;
     [SerializeField] RectTransform CommentParent;
     [SerializeField] InputField Inputfield_comment;
-
-    [Header("Canvas Scale")]
-    RectTransform Origin_Size;
-    [SerializeField] RectTransform CanvasScale;
-    [SerializeField] RectTransform Canvas_Viewport;
-    [SerializeField] RectTransform Canvas_Comment;
-    [SerializeField] RectTransform Canvas_Info;
 
     Dictionary<int, List<Comment>> Comment_Data = new Dictionary<int, List<Comment>>();
     Dictionary<int, Stack<GameObject>> Comment_Stack_Pool = new Dictionary<int, Stack<GameObject>>();
@@ -26,46 +18,16 @@ public class CommentLoader : MonoBehaviour
     Stack<GameObject> CommentPool = new Stack<GameObject>();
     List<Comment> Parent_object;
     List<Comment> Comment_list;
-    List<CommunityInfo.reply> request_reply_Data;
-    public bool comment_location_state;
     private int comment_id_number = 1;
     public int parent_top_comment_id;
+    public bool comment_location_state;
 
     private void Start()
     {
         comment_location_state = true;
-        //RequestComment();
         Inputfield_comment.onValueChanged.AddListener(ObservedInputField);
         Btn_enter.onClick.AddListener(OnClickAddComment);
         Btn_enter.gameObject.SetActive(false);
-        Origin_Size.sizeDelta = Canvas_Comment.sizeDelta;
-        SetPrefabScale();
-    }
-    void SetPrefabScale()
-    {
-        float view_size = CanvasScale.rect.width;
-        Canvas_Viewport.sizeDelta = new Vector2(view_size, Canvas_Viewport.sizeDelta.y);
-        float comment_size = Canvas_Viewport.rect.width + (Canvas_Viewport.rect.width / 4);
-        Canvas_Comment.sizeDelta = new Vector2(comment_size, Canvas_Comment.sizeDelta.y);
-        //Canvas_Info.sizeDelta = new Vector2(Canvas_Comment.rect.width - Origin_Size.rect.width, Canvas_Info.rect.height);
-        /*int setWidth = 1920; // 사용자 설정 너비
-        int setHeight = 1080; // 사용자 설정 높이
-
-        int deviceWidth = Screen.width; // 기기 너비 저장
-        int deviceHeight = Screen.height; // 기기 높이 저장
-
-        Screen.SetResolution(setWidth, (int)(((float)deviceHeight / deviceWidth) * setWidth), true); // SetResolution 함수 제대로 사용하기
-
-        if ((float)setWidth / setHeight < (float)deviceWidth / deviceHeight) // 기기의 해상도 비가 더 큰 경우
-        {
-            float newWidth = ((float)setWidth / setHeight) / ((float)deviceWidth / deviceHeight); // 새로운 너비
-            Camera.main.rect = new Rect((1f - newWidth) / 2f, 0f, newWidth, 1f); // 새로운 Rect 적용
-        }
-        else // 게임의 해상도 비가 더 큰 경우
-        {
-            float newHeight = ((float)deviceWidth / deviceHeight) / ((float)setWidth / setHeight); // 새로운 높이
-            Camera.main.rect = new Rect(0f, (1f - newHeight) / 2f, 1f, newHeight); // 새로운 Rect 적용
-        }*/
     }
     void ObservedInputField(string text)
     {
@@ -73,6 +35,22 @@ public class CommentLoader : MonoBehaviour
             Btn_enter.gameObject.SetActive(false);
         else
             Btn_enter.gameObject.SetActive(true);
+    }
+
+    public void SetRecommentBase(string mention, int parent_ID)
+    {
+        if (parent_top_comment_id != parent_ID)
+        {
+            Inputfield_comment.text = mention;
+            parent_top_comment_id = parent_ID;
+            comment_location_state = false;
+        }
+        else
+        {
+            Inputfield_comment.text = string.Empty;
+            parent_top_comment_id = 0;
+            comment_location_state = true;
+        }
     }
     /// <summary>
     /// 데이터를 읽어오는 구문. 형식 및 초기화는 Struct 확인 후 추가 구현 및 변경 필요.(수신부)
@@ -193,6 +171,7 @@ public class CommentLoader : MonoBehaviour
             Comment_list.Add(newcommented);
             Parent_object[0].SetReCommentCount(Comment_list.Count - 1);
 
+            parent_top_comment_id = 0;
             comment_location_state = true;
         }
         Inputfield_comment.text = string.Empty;
