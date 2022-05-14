@@ -55,9 +55,9 @@ public class Comment : MonoBehaviour
     void SetResolution()
     {
         float distance;
-        
+
         Rect_Viewport.sizeDelta = new Vector2(Rect_Base_resolution.rect.width, Rect_Base_resolution.rect.height);
-        if(thiscomment.top_comment_id == 0)
+        if (thiscomment.top_comment_id == 0)
         {
             distance = Rect_Viewport.rect.width - (Rect_Profile.rect.width + Rect_Detail.rect.width + Rect_Like.rect.width);
         }
@@ -136,25 +136,12 @@ public class Comment : MonoBehaviour
 
     public void SetRecommment()
     {
-        if (recommentstate)
-        {
-            contents.text = "@" + thiscomment.nickname + " ";
-            if (parent_comment_ID != 0)
-            {
-                RootCommentItemManagement.parent_top_comment_id = thiscomment.top_comment_id;
-            }
-            else
-            {
-                RootCommentItemManagement.parent_top_comment_id = thiscomment.id;
-            }
-            RootCommentItemManagement.comment_location_state = !recommentstate;
-        }
+        string mention = "@" + thiscomment.nickname + " ";
+
+        if(parent_comment_ID != 0)
+            RootCommentItemManagement.SetRecommentBase(mention, thiscomment.top_comment_id);
         else
-        {
-            contents.text = string.Empty;
-            RootCommentItemManagement.comment_location_state = !recommentstate;
-        }
-        recommentstate = recommentstate == true ? false : true;
+            RootCommentItemManagement.SetRecommentBase(mention, thiscomment.id);
     }
     private void OnClickProfileORNickname()
     {
@@ -180,7 +167,6 @@ public class Comment : MonoBehaviour
     private void OnClickWriteRecomment()
     {
         // 국문 키패드 활성화
-        Debug.Log("중복클릭 방지");
         SetRecommment();
     }
     private void OnClickLike()
