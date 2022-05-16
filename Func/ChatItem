@@ -1,0 +1,65 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
+
+public class ChatItem : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
+{
+    [HideInInspector] public int chat_num;
+    [HideInInspector] public string chat_sender;
+    [HideInInspector] public string chat_message;
+    [SerializeField] ChatMessage chatMessage;
+    public Text Chat_Text;
+    public Button Btn_ChatMassage;
+    public SelcetButton Alarm_panel;
+    private float clickTime;
+    private float minClickTime = 1;
+    private bool isClick;
+    private bool islongpress = false;
+
+    public void SetChatData(string chat_sender, string message)
+    {
+        this.chat_sender = chat_sender;
+        this.chat_message = message;
+    }
+
+    void OnEnable()
+    {
+        Chat_Text.text = chat_message;
+    }
+    void FixedUpdate()
+    {
+        if (isClick)
+        {
+            clickTime += Time.deltaTime;
+            if (clickTime >= minClickTime)
+            {
+                // 신고하기 창으로 넘기기
+                Debug.Log("1초이상 눌렀다");
+                Alarm_panel.gameObject.SetActive(true);
+                Alarm_panel.SetConnectPanelData(chat_sender, chat_message);
+                islongpress = true;
+                chatMessage.Long_Press_State = true;
+                isClick = false;
+            }
+
+        }
+        else
+            clickTime = 0;
+    }
+
+    public void OnPointerDown(PointerEventData eventData)
+    {
+        isClick = true;
+    }
+
+    public void OnPointerUp(PointerEventData eventData)
+    {
+        isClick = false;
+        if (islongpress)
+        {
+            islongpress = false; 
+        }
+    }
+}
