@@ -10,7 +10,7 @@ using UnityEngine.UI;
 public class UIChat : AddressableUI, IChatClientListener
 {
     [SerializeField] ChatMessage chatMessage;
-    
+
     [SerializeField] InputField Message;
 
     [Header("Message Panel State")]
@@ -23,6 +23,8 @@ public class UIChat : AddressableUI, IChatClientListener
     [SerializeField] Button Btn_AbbreviationOn;
     [SerializeField] Button Btn_Plus;
     [SerializeField] Button Btn_Hide;
+    [SerializeField] Button Btn_Declaration;
+    [SerializeField] GameObject Declaration_object;
     [SerializeField] GameObject Message_Alarm_Object;
 
     [Header("Subscribe Channel")]
@@ -39,6 +41,7 @@ public class UIChat : AddressableUI, IChatClientListener
         AddListener();
         Chat_Panel_Rect.gameObject.SetActive(false);
         Abbreviation_Object.SetActive(false);
+        Declaration_object.SetActive(false);
     }
     #region Button Controll
     void AddListener()
@@ -48,6 +51,7 @@ public class UIChat : AddressableUI, IChatClientListener
         Btn_AbbreviationOn.onClick.AddListener(OnClickAbbreviation);
         Btn_Plus.onClick.AddListener(OnClickPlus);
         Btn_Hide.onClick.AddListener(OnClickHideButton);
+        Btn_Declaration.onClick.AddListener(OnClickDeclaration);
     }
     void OnClickAbbreviation()
     {
@@ -60,6 +64,13 @@ public class UIChat : AddressableUI, IChatClientListener
     void OnClickHideButton()
     {
         Hide_Message(true);
+    }
+    void OnClickDeclaration()
+    {
+        if (Declaration_object.activeSelf == false)
+            Declaration_object.SetActive(true);
+        else
+            Declaration_object.SetActive(false);
     }
     void OnClickCamera()
     { }
@@ -105,7 +116,7 @@ public class UIChat : AddressableUI, IChatClientListener
     }
     void Update()
     {
-        if(this.chatClient != null)
+        if (this.chatClient != null)
         {
             this.chatClient.Service();
         }
@@ -138,6 +149,7 @@ public class UIChat : AddressableUI, IChatClientListener
         ChatChannel.Add("Community");
         ChatClient.Subscribe(ChatChannel.ToArray());
         chatMessage.CurentChannel = ChatChannel[0];
+        chatMessage.CurentChannel_text.text = "채널 " + ChatChannel[0];
     }
 
     #region PhotonChatCallBack
@@ -165,7 +177,7 @@ public class UIChat : AddressableUI, IChatClientListener
     public void OnGetMessages(string channelName, string[] senders, object[] messages)
     {
         Debug.Log("GetMessage");
-        for(int i = 0; i < messages.Length; i++)
+        for (int i = 0; i < messages.Length; i++)
         {
             ChatItem newchenneldata = new ChatItem();
             string message = messages[i] as string;
@@ -181,6 +193,11 @@ public class UIChat : AddressableUI, IChatClientListener
     public void OnSubscribed(string[] channels, bool[] results)
     {
         Debug.Log(string.Format("채널 입장 ({0})", string.Join(",", channels)));
+        string system_message = string.Format("채널 입장 ({0})", string.Join(",", channels));
+        string channel = string.Format("{0}", channels);
+        ChatItem newchenneldata = new ChatItem();
+        newchenneldata.SetChatData("System", system_message);
+        chatMessage.MessageClassification(channel, newchenneldata);
     }
 
     public void OnUnsubscribed(string[] channels)
