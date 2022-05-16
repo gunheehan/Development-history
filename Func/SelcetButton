@@ -1,0 +1,44 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+
+public class SelcetButton : MonoBehaviour
+{
+    [SerializeField] ChatMessage chatMessage;
+    [SerializeField] Button Btn_Exit;
+    [SerializeField] Button Btn_Profile;
+    [SerializeField] Button Btn_Abbreviation;
+
+    string sender;
+    string message;
+    private void Start()
+    {
+        this.gameObject.SetActive(false);
+        AddListener();
+    }
+    void AddListener()
+    {
+        Btn_Exit.onClick.AddListener(OnClickExitLongPress);
+        Btn_Profile.onClick.AddListener(OnClickProfile);
+        Btn_Abbreviation.onClick.AddListener(OnClickAbbreviation);
+    }
+    public void SetConnectPanelData(string sender, string message)
+    {
+        this.sender = sender;
+        this.message = message;
+    }
+    void OnClickExitLongPress()
+    {
+        chatMessage.LongPressEnd();
+        this.gameObject.SetActive(false);
+    }
+    void OnClickProfile()
+    {
+        Debug.Log("프로필을 클릭하셨습니다.");
+    }
+    void OnClickAbbreviation()
+    {
+        Debug.Log("신고하기를 클릭하셨습니다.");
+    }
+}
