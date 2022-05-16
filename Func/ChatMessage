@@ -29,10 +29,11 @@ public class ChatMessage : MonoBehaviour
     [SerializeField] Button Btn_SendMessage;
 
     [Header("ChannelButton")]
-    [SerializeField] Button Btn_CurentChennel;
-    [SerializeField] Button Btn_CommunityChennel;
+    [SerializeField] Button Btn_CurentChannel;
+    [SerializeField] Button Btn_CommunityChannel;
     Color32 Curent_Chennel_Btn_Color;
     Color32 Other_Chennel_Btn_Color;
+    public Text CurentChannel_text;
 
     [Header("ChannelLoadData")]
     public string CurentChannel;
@@ -61,8 +62,8 @@ public class ChatMessage : MonoBehaviour
     }
     void AddListener()
     {
-        Btn_CurentChennel.onClick.AddListener(OnClickCurentChennel);
-        Btn_CommunityChennel.onClick.AddListener(OnClickCommunityChennel);
+        Btn_CurentChannel.onClick.AddListener(OnClickCurentChennel);
+        Btn_CommunityChannel.onClick.AddListener(OnClickCommunityChennel);
         Btn_SendMessage.onClick.AddListener(() => OnClickSendMessage());
         Message_Field.onValueChanged.AddListener(ObservedInputField);
         //Message_Field.onEndEdit.AddListener(text => OnclickMobileInputFieldDone());
@@ -70,8 +71,8 @@ public class ChatMessage : MonoBehaviour
     #region OnClickEvent
     void OnClickCurentChennel()
     {
-        Btn_CurentChennel.image.color = Curent_Chennel_Btn_Color;
-        Btn_CommunityChennel.image.color = Other_Chennel_Btn_Color;
+        Btn_CurentChannel.image.color = Curent_Chennel_Btn_Color;
+        Btn_CommunityChannel.image.color = Other_Chennel_Btn_Color;
         if (UIchat.ChatChannel[0] != CurentChannel)
         {
             if (chatitem_index_front != chatitem_index_rear)
@@ -88,8 +89,8 @@ public class ChatMessage : MonoBehaviour
     }
     void OnClickCommunityChennel()
     {
-        Btn_CurentChennel.image.color = Other_Chennel_Btn_Color;
-        Btn_CommunityChennel.image.color = Curent_Chennel_Btn_Color;
+        Btn_CurentChannel.image.color = Other_Chennel_Btn_Color;
+        Btn_CommunityChannel.image.color = Curent_Chennel_Btn_Color;
         if (UIchat.ChatChannel[1] != CurentChannel)
         {
             if (chatitem_index_front != chatitem_index_rear)
@@ -202,7 +203,7 @@ public class ChatMessage : MonoBehaviour
                 if (ChatItem_Circle_Queue[chatitem_index_rear].chat_num == channel_text_list[channel_text_list.Count - 2].chat_num)
                     Long_Press_Callback_State = true;
 
-                if(Long_Press_Callback_State)
+                if (Long_Press_Callback_State)
                     MessageLoad += () => SetChatItme(channeldata);
             }
             else
