@@ -14,13 +14,17 @@ public class CommentLoader : MonoBehaviour
 
     Dictionary<int, List<Comment>> Comment_Data = new Dictionary<int, List<Comment>>();
     Dictionary<int, Stack<GameObject>> Comment_Stack_Pool = new Dictionary<int, Stack<GameObject>>();
+    List<Comment> Comment_list;
+    List<Comment> Top_Comment_list = new List<Comment>();
+    Queue<Comment> Top_Comment = new Queue<Comment>();
     Stack<GameObject> Comment_Stack;
     Stack<GameObject> CommentPool = new Stack<GameObject>();
-    List<Comment> Parent_object;
-    List<Comment> Comment_list;
-    private int comment_id_number = 1;
-    public int parent_top_comment_id;
+    private int comment_id_number;
+    public int parent_top_comment_id = 1;
     public bool comment_location_state;
+
+    int top_comment_load_num = 1;
+    int comment_pool_size = 0;
 
     private void Start()
     {
@@ -28,6 +32,33 @@ public class CommentLoader : MonoBehaviour
         Inputfield_comment.onValueChanged.AddListener(ObservedInputField);
         Btn_enter.onClick.AddListener(OnClickAddComment);
         Btn_enter.gameObject.SetActive(false);
+        Comment_Circle_Queue = new Comment[Comment_Queue_Size];
+    }
+    private void OnDisable()
+    {
+        //ResetPoolData();
+        ResetMessageQueuePool();
+        Comment_Data.Clear();
+        Top_Comment_list.Clear();
+        parent_top_comment_id = 0;
+        top_comment_load_num = 1;
+        comment_location_state = true;
+        Inputfield_comment.text = string.Empty;
+    }
+
+    void ResetPoolData()
+    {
+        int parent_reset_index = Top_Comment.Count;
+        for (int i = 0; i < parent_reset_index; i++)
+        {
+            Comment PopComment = Top_Comment.Dequeue();
+            if (Comment_Stack_Pool.TryGetValue(PopComment.thiscomment.id, out Comment_Stack))
+            {
+                SetRcommentDIsplay(PopComment.thiscomment.id, false);
+            }
+            PopComment.gameObject.SetActive(false);
+            CommentPool.Push(PopComment.gameObject);
+        }
     }
     void ObservedInputField(string text)
     {
@@ -35,22 +66,6 @@ public class CommentLoader : MonoBehaviour
             Btn_enter.gameObject.SetActive(false);
         else
             Btn_enter.gameObject.SetActive(true);
-    }
-
-    public void SetRecommentBase(string mention, int parent_ID)
-    {
-        if (parent_top_comment_id != parent_ID)
-        {
-            Inputfield_comment.text = mention;
-            parent_top_comment_id = parent_ID;
-            comment_location_state = false;
-        }
-        else
-        {
-            Inputfield_comment.text = string.Empty;
-            parent_top_comment_id = 0;
-            comment_location_state = true;
-        }
     }
     /// <summary>
     /// 데이터를 읽어오는 구문. 형식 및 초기화는 Struct 확인 후 추가 구현 및 변경 필요.(수신부)
@@ -60,27 +75,170 @@ public class CommentLoader : MonoBehaviour
     {
         for (int i = 0; i < newcomment.Length; i++)
         {
-            Comment newcommented = PopCommentPool().GetComponent<Comment>();
+            Comment newcommented = new Comment();
+            newcommented.thiscomment = newcomment[i];
             if (newcomment[i].top_comment_id == 0)
             {
-                newcommented.SetCommentData(newcomment[i]);
+                newcommented.Circle_Load_num = top_comment_load_num;
                 Comment_list = new List<Comment>();
                 Comment_list.Add(newcommented);
                 Comment_Data.Add(newcomment[i].id, Comment_list);
-                newcommented.gameObject.SetActive(true);
+                Top_Comment_list.Add(newcommented);
+                top_comment_load_num++;
             }
             else
             {
-                Comment_list = Comment_Data[parent_top_comment_id];
+                Comment_list = Comment_Data[newcomment[i].top_comment_id];
                 Comment_list.Add(newcommented);
-                Parent_object[0].SetReCommentCount(Comment_list.Count - 1);
-                newcommented.SetCommentData(newcomment[i], Parent_object[0].gameObject.transform.GetSiblingIndex());
-                newcommented.gameObject.SetActive(false);
+                Comment_list[0].SetReCommentCount(Comment_list.Count - 1);
             }
-            comment_id_number++;
+        }
+        //for (int i = newcomment.Length - 1; i > (newcomment.Length - comment_pool_size); i++)
+        for (int i = 0; i < newcomment.Length; i++)
+        {
+            //Comment newcommented = PopCommentPool().GetComponent<Comment>();
+            //newcommented.SetCommentData(Top_Comment_list[i].thiscomment);
+            //newcommented.transform.SetAsFirstSibling();
+            //newcommented.gameObject.SetActive(true);
+            //Top_Comment.Enqueue(newcommented);
+            SetCommentItme(newcomment[i]);
+        }
+        comment_id_number = newcomment[newcomment.Length - 1].id + 1;
+        LayoutRebuilder.ForceRebuildLayoutImmediate(gameObject.GetComponent<RectTransform>());
+    }
+    int commentitem_index_front = 0;
+    int commentitem_index_rear = 0;
+    Comment[] Comment_Circle_Queue;
+    [SerializeField] int Comment_Queue_Size = 10;
+
+    void SetCommentItme(CommunityInfo.reply newComment)
+    {
+        if ((commentitem_index_rear + 1) % Comment_Queue_Size == commentitem_index_front % Comment_Queue_Size)
+        {
+            if (CommentPool.Count <= 0)
+            {
+                if (!Comment_Circle_Queue[commentitem_index_front])
+                {
+                    Comment_Circle_Queue[commentitem_index_front] = PopCommentPool().GetComponent<Comment>();
+                    Comment_Circle_Queue[commentitem_index_front].SetCommentData(newComment);
+                }
+                Comment_Circle_Queue[commentitem_index_front].gameObject.SetActive(false);
+                Comment_Circle_Queue[commentitem_index_front].gameObject.transform.SetAsLastSibling();
+                CommentPool.Push(Comment_Circle_Queue[commentitem_index_front].gameObject);
+            }
+            commentitem_index_front = (commentitem_index_front + 1) % Comment_Queue_Size;
+            commentitem_index_rear = (commentitem_index_rear + 1) % Comment_Queue_Size;
+        }
+        else
+        {
+            commentitem_index_rear = (commentitem_index_rear + 1) % Comment_Queue_Size;
+        }
+        Comment_Circle_Queue[commentitem_index_rear] = PopCommentPool().GetComponent<Comment>();
+        Comment_Circle_Queue[commentitem_index_rear].SetCommentData(newComment);
+        Comment_Circle_Queue[commentitem_index_rear].gameObject.transform.SetAsFirstSibling();
+        Comment_Circle_Queue[commentitem_index_rear].gameObject.SetActive(true);
+        LayoutRebuilder.ForceRebuildLayoutImmediate(CommentParent.gameObject.GetComponent<RectTransform>());
+    }
+    void ResetMessageQueuePool()
+    {
+        commentitem_index_front = 0;
+        commentitem_index_rear = 0;
+        int reset_size;
+        if (Top_Comment_list.Count > Comment_Queue_Size)
+            reset_size = Comment_Queue_Size;
+        else
+            reset_size = Top_Comment_list.Count;
+        if (!(reset_size <= 0))
+        {
+            for (int i = 0; i < reset_size; i++)
+            {
+                commentitem_index_rear = (commentitem_index_rear + 1) % Comment_Queue_Size;
+                Comment_Circle_Queue[commentitem_index_rear].gameObject.SetActive(false);
+                CommentPool.Push(Comment_Circle_Queue[commentitem_index_rear].gameObject);
+            }
+            commentitem_index_rear = 0;
         }
     }
 
+    #region Scroll LoadQueue Event
+    [SerializeField] int MessageLoadSize = 5;
+    int front_num;
+    int back_num;
+    int load_num_index;
+    bool scroll_load_ing = false;
+    public void BeforeMessageLoad()
+    {
+        front_num = commentitem_index_rear;
+        back_num = commentitem_index_front;
+        if (Comment_Circle_Queue[back_num].Circle_Load_num - 1 >= 0)
+            load_num_index = Comment_Circle_Queue[back_num].Circle_Load_num - 1;
+        else
+            load_num_index = -1;
+        if (front_num < 0)
+            front_num = (Comment_Queue_Size - 1) % Comment_Queue_Size;
+        if (back_num < 0)
+            back_num = (Comment_Queue_Size - 1) % Comment_Queue_Size;
+        if (load_num_index > 0)
+            scroll_load_ing = true;
+
+        for (int i = 0; i < MessageLoadSize; i++)
+        {
+            load_num_index--;
+            if (!(load_num_index < 0))
+            {
+                Comment_Circle_Queue[front_num].gameObject.SetActive(false);
+                Comment_Circle_Queue[front_num].gameObject.transform.SetAsFirstSibling();
+                CommentPool.Push(Comment_Circle_Queue[front_num].gameObject);
+
+                front_num = (front_num - 1) % Comment_Queue_Size;
+                back_num = (back_num - 1) % Comment_Queue_Size;
+                if (front_num < 0)
+                    front_num = (Comment_Queue_Size - 1) % Comment_Queue_Size;
+                if (back_num < 0)
+                    back_num = (Comment_Queue_Size - 1) % Comment_Queue_Size;
+
+                Comment_Circle_Queue[back_num] = PopCommentPool().GetComponent<Comment>();
+                Comment_Circle_Queue[back_num].Circle_Load_num = Top_Comment_list[load_num_index].Circle_Load_num;
+                Comment_Circle_Queue[back_num].SetCommentData(Top_Comment_list[load_num_index].thiscomment);
+                Comment_Circle_Queue[back_num].gameObject.SetActive(true);
+            }
+        }
+        commentitem_index_front = back_num;
+        commentitem_index_rear = front_num;
+        LayoutRebuilder.ForceRebuildLayoutImmediate(CommentParent.gameObject.GetComponent<RectTransform>());
+    }
+    public void AfterMessageLoad()
+    {
+        int message_size = Top_Comment_list.Count;
+        front_num = commentitem_index_rear;
+        back_num = commentitem_index_front;
+        load_num_index = Comment_Circle_Queue[front_num].Circle_Load_num;
+
+        for (int i = 0; i < MessageLoadSize; i++)
+        {
+            if (Comment_Circle_Queue[front_num].thiscomment.id != Top_Comment_list[Top_Comment_list.Count - 1].thiscomment.id)
+            {
+                Comment_Circle_Queue[back_num].gameObject.SetActive(false);
+                Comment_Circle_Queue[back_num].gameObject.transform.SetAsLastSibling();
+                CommentPool.Push(Comment_Circle_Queue[back_num].gameObject);
+
+                front_num = (front_num + 1) % Comment_Queue_Size;
+                back_num = (back_num + 1) % Comment_Queue_Size;
+
+                Comment_Circle_Queue[front_num] = PopCommentPool().GetComponent<Comment>();
+                Comment_Circle_Queue[front_num].Circle_Load_num = Top_Comment_list[load_num_index].Circle_Load_num;
+                Comment_Circle_Queue[front_num].SetCommentData(Top_Comment_list[load_num_index].thiscomment);
+                Comment_Circle_Queue[front_num].gameObject.SetActive(true);
+            }
+            load_num_index++;
+        }
+        if (load_num_index >= message_size)
+            scroll_load_ing = false;
+        commentitem_index_front = back_num;
+        commentitem_index_rear = front_num;
+        LayoutRebuilder.ForceRebuildLayoutImmediate(CommentParent.gameObject.GetComponent<RectTransform>());
+    }
+    #endregion
     /// <summary>
     /// 해당 댓글의 대댓글 데이터를 가져와서 오브젝트에 데이터를 할당 및 회수 하는 구문.
     /// </summary>
@@ -95,8 +253,7 @@ public class CommentLoader : MonoBehaviour
                 if (state)
                 {
                     Comment newcommented = PopCommentPool().GetComponent<Comment>();
-                    Parent_object = Comment_Data[parentindex];
-                    newcommented.SetCommentData(Comment_list[Comment_list.Count - i].thiscomment, Parent_object[0].gameObject.transform.GetSiblingIndex());
+                    newcommented.SetCommentData(Comment_list[Comment_list.Count - i].thiscomment, Comment_list[0].gameObject.transform.GetSiblingIndex());
 
                     if (Comment_Stack_Pool.TryGetValue(parentindex, out Comment_Stack))
                     {
@@ -116,9 +273,9 @@ public class CommentLoader : MonoBehaviour
                     if (Comment_Stack_Pool.TryGetValue(parentindex, out Comment_Stack))
                     {
                         Comment newcommented = Comment_Stack.Pop().GetComponent<Comment>();
-                        Comment_list[i].thiscomment = newcommented.thiscomment;
-                        newcommented.gameObject.SetActive(false);
+                        //Comment_list[i].thiscomment = newcommented.thiscomment;
                         newcommented.gameObject.transform.SetAsLastSibling();
+                        newcommented.gameObject.SetActive(false);
                         CommentPool.Push(newcommented.gameObject);
                     }
                 }
@@ -139,37 +296,51 @@ public class CommentLoader : MonoBehaviour
         Comment newcommented;
         if (comment_location_state)
         {
-            newcommented = PopCommentPool().GetComponent<Comment>();
-            newcommented.SetCommentData(newcomment);
-            Comment_list = new List<Comment>();
-            Comment_list.Add(newcommented);
-            Comment_Data.Add(newcomment.id, Comment_list);
-            newcommented.transform.SetAsFirstSibling();
-            newcommented.gameObject.SetActive(true);
-            LayoutRebuilder.ForceRebuildLayoutImmediate(newcommented.gameObject.GetComponent<RectTransform>());
+            newcommented = new Comment();
+            newcommented.Circle_Load_num = top_comment_load_num;
+            newcommented.thiscomment = newcomment;
+            Top_Comment_list.Add(newcommented);
+            SetCommentItme(newcommented.thiscomment);
+            top_comment_load_num++;
+
+
+            //newcommented = PopCommentPool().GetComponent<Comment>();
+            //newcommented.SetCommentData(newcomment);
+            //Comment_list = new List<Comment>();
+            //Comment_list.Add(newcommented);
+            //Comment_Data.Add(newcomment.id, Comment_list);
+            //Top_Comment_list.Add(newcommented);
+            //newcommented.transform.SetAsFirstSibling();
+            //newcommented.gameObject.SetActive(true);
+            //top_comment_load_num++;
+            //LayoutRebuilder.ForceRebuildLayoutImmediate(newcommented.gameObject.GetComponent<RectTransform>());
         }
         else
         {
-            Parent_object = Comment_Data[parent_top_comment_id];
+            Comment_list = Comment_Data[parent_top_comment_id];
             newcomment.top_comment_id = parent_top_comment_id;
             newcommented = new Comment();
             newcommented.thiscomment = newcomment;
-            if (Parent_object[0].recommentactivestate == true)
+            Comment_list.Add(newcommented);
+            if (Comment_list[0].recommentactivestate == true)
             {
                 Comment copy_comment = PopCommentPool().GetComponent<Comment>();
-                copy_comment.SetCommentData(newcomment, Parent_object[0].gameObject.transform.GetSiblingIndex());
+                copy_comment.SetCommentData(newcomment, Comment_list[0].gameObject.transform.GetSiblingIndex());
                 if (Comment_Stack_Pool.TryGetValue(parent_top_comment_id, out Comment_Stack))
                 {
-                    Comment comment_copy = new Comment();
                     Comment_Stack.Push(copy_comment.gameObject);
                 }
-
+                else
+                {
+                    Comment_Stack = new Stack<GameObject>();
+                    Comment_Stack.Push(copy_comment.gameObject);
+                    Comment_Stack_Pool.Add(parent_top_comment_id, Comment_Stack);
+                }
                 copy_comment.gameObject.SetActive(true);
                 LayoutRebuilder.ForceRebuildLayoutImmediate(copy_comment.gameObject.GetComponent<RectTransform>());
             }
-            Comment_list = Comment_Data[parent_top_comment_id];
-            Comment_list.Add(newcommented);
-            Parent_object[0].SetReCommentCount(Comment_list.Count - 1);
+
+            Comment_list[0].SetReCommentCount(Comment_list.Count - 1);
 
             parent_top_comment_id = 0;
             comment_location_state = true;
@@ -177,7 +348,21 @@ public class CommentLoader : MonoBehaviour
         Inputfield_comment.text = string.Empty;
         comment_id_number++;
     }
-
+    public void SetRecommentLocation(string mention, int parent_ID)
+    {
+        if (parent_top_comment_id != parent_ID)
+        {
+            Inputfield_comment.text = mention;
+            parent_top_comment_id = parent_ID;
+            comment_location_state = false;
+        }
+        else
+        {
+            Inputfield_comment.text = string.Empty;
+            parent_top_comment_id = 0;
+            comment_location_state = true;
+        }
+    }
     GameObject PopCommentPool()
     {
         if (CommentPool.Count > 0)
