@@ -1,226 +1,166 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
-
+using UnityEngine.EventSystems;
+/// <summary>
+///   public int id;
+///public int user_id;
+///public string nickname;
+///public string cmt_txt;
+///public bool like_yn;
+///public string reg_dtm;
+///public int top_comment_id;
+/// </summary>
 public class CommentItem : MonoBehaviour
 {
-    [SerializeField] private UIPostComment RootCommentItemManagement;
-    [SerializeField] private HorizontalLayoutGroup HorizontalPadding;
-    [SerializeField] private Button Btn_profile;
-    [SerializeField] private Button Btn_nickname;
-    [SerializeField] private Button Btn_writerecomment;
-    [SerializeField] private Button Btn_like;
-    [SerializeField] private Button Btn_unlike;
-    [SerializeField] private Button Btn_express_answer;
-    [SerializeField] private Button Btn_blind_anser;
-    [SerializeField] private Button Btn_Report;
-    [SerializeField] private Button Btn_Delete;
-    [SerializeField] private GameObject Object_Recomment_Count;
+    UIPostView postview = null;
+    [SerializeField] HorizontalLayoutGroup HorizontalPadding;
 
-    [SerializeField] private Text nickname;
-    [SerializeField] private Text animal_nickname;
-    [SerializeField] private Text upload_time;
-    [SerializeField] private Text comment;
-    [SerializeField] private Text like_Text;
-    [SerializeField] private Text express_answer_list;
-    [SerializeField] private InputField contents;
+    [SerializeField] Button Btn_nestedReply;
+    [SerializeField] Button Btn_report;
+    [SerializeField] Button Btn_delete;
+    [SerializeField] Image Img_Like;
 
-    public reply thiscomment;
-    private int parent_comment_ID;
-    private short like_count;
-    public bool recommentstate = true;
-    public bool recommentactivestate = false;
+    [SerializeField] Text Text_nickname;
+    [SerializeField] Text Text_animal;
+    [SerializeField] Text Text_uploadtime;
+    [SerializeField] Text Text_context;
+    [SerializeField] Text Text_likecount;
+    [SerializeField] Text Text_moreComment;
 
-    private void Init()
+    List<CommentItem> nestedItemList = new List<CommentItem>();
+    int nestedItemList_Display_Index = 0;
+    public int _parentIndex;
+    CommunityInfo.reply _reply;
+
+    private void Start()
     {
-        SetLitsener();
-        Btn_writerecomment.gameObject.SetActive(true);
-        Btn_Delete.gameObject.SetActive(true);
-        Btn_unlike.gameObject.SetActive(true);
-        Btn_like.gameObject.SetActive(false);
-        Btn_express_answer.gameObject.SetActive(false);
-        Btn_blind_anser.gameObject.SetActive(false);
-        like_Text.gameObject.SetActive(false);
+        SetListener();
     }
-    private void SetLitsener()
+    public void AddNestedReply(CommentItem _nestedItem)
     {
-        Btn_profile.onClick.AddListener(OnClickProfileORNickname);
-        Btn_nickname.onClick.AddListener(OnClickProfileORNickname);
-        Btn_writerecomment.onClick.AddListener(OnClickWriteRecomment);
-        Btn_like.onClick.AddListener(OnClickLike);
-        Btn_unlike.onClick.AddListener(OnClickUnLike);
-        Btn_express_answer.onClick.AddListener(OnClickExpressAnswerList);
-        Btn_blind_anser.onClick.AddListener(OnClickBlindAnserList);
-        Btn_Report.onClick.AddListener(OnClickReport);
-        Btn_Delete.onClick.AddListener(OnClickDelete);
-    }
-    public void SetCommentData(reply info, int siblingindex = 0)
-    {
-        Init();
-        nickname.text = info.user_nickname;
-        upload_time.text = ElapsedTime(info.uploadtime) + "전";
-        comment.text = info.comment;
-        
-        if (info.comment == "")
-            comment.text = "빈 상태로 생성";
-        
-        HorizontalPadding.padding.left = 0;
-        if (info.bool_like)
-        {
-            like_count = 1;
-            like_Text.text = "좋아요 " + like_count.ToString();
-            like_Text.gameObject.SetActive(true);
-            Btn_like.gameObject.SetActive(true);
-            Btn_unlike.gameObject.SetActive(false);
-        }
+        if(nestedItemList.Count > 0)
+            _nestedItem.transform.SetSiblingIndex(nestedItemList[nestedItemList.Count - 1].transform.GetSiblingIndex() + 1);
         else
-        {
-            like_count = 0;
-            like_Text.text = "좋아요 " + like_count.ToString();
-            like_Text.gameObject.SetActive(false);
-            Btn_like.gameObject.SetActive(false);
-            Btn_unlike.gameObject.SetActive(true);
-        }
+            _nestedItem.transform.SetSiblingIndex(transform.GetSiblingIndex() + 1);
+        nestedItemList.Add(_nestedItem);
         
-        Object_Recomment_Count.SetActive(true);
-        if (siblingindex != 0)
+        if(_nestedItem.gameObject.activeSelf == false)
         {
+            nestedItemList_Display_Index++;
+            Text_moreComment.text = "...답글 " + nestedItemList.Count + "개 모두보기";
+            Text_moreComment.gameObject.SetActive(true);
+        }
+    }
+    void ClearNestedItem()
+    {
+        foreach (CommentItem _item in nestedItemList)
+            _item.ClearNestedItem();
+    }
+    public void ClearObjectActivation()
+    {
+        gameObject.SetActive(false);
+        Img_Like.gameObject.SetActive(true);
+        Text_likecount.gameObject.SetActive(true);
+        Text_moreComment.gameObject.SetActive(false);
+    }
+    public void ClearSetting()
+    {
+        _reply = default(CommunityInfo.reply);
+        ClearNestedItem();
+        ClearObjectActivation();
+        //클리어 
+    }
+    public void Setting(CommunityInfo.reply _newReply,UIPostView _postview)
+    {
+        postview = _postview;
+        _reply = _newReply;
+        if (_reply.Equals(default(CommunityInfo.reply)))
+            return;
+        Text_nickname.text = _reply.nickname;
+        Text_animal.text = _reply.animal;
+        Text_uploadtime.text = Utility.HowMuchTimeAtNowTime(_reply.reg_dtm);
+        Text_context.text = _reply.cmt_txt;
+        Text_likecount.text = _reply.like_count.ToString();
+        Text_moreComment.text = _reply.animal;
+        if (_reply.top_comment_id != 0)
+        {
+            postview.FindParentNestedItem(this, _reply.top_comment_id);
+            _parentIndex = 0;
             HorizontalPadding.padding.left += 120;
-            this.transform.SetSiblingIndex(++siblingindex);
-            parent_comment_ID = info.top_comment_id;
-            Object_Recomment_Count.SetActive(false);
-        }
-
-        thiscomment = info;
-    }
-
-    private string ElapsedTime(float time)
-    {
-        int[] clock = new int[3];
-        time -= float.Parse(DateTime.Now.ToString("HHmmss"));
-        time *= -1;
-        clock[0] = ((int)time / 3600);
-        clock[1] = ((int)time / 60 % 60);
-        clock[2] = ((int)time % 60);
-
-        if (clock[0] != 0)
-        {
-            if (clock[0] >= 24)
-                return clock[0] / 24 + "일";
-            else
-                return clock[0] + "시간";
-        }
-        else if (clock[1] != 0)
-        {
-            return clock[1] + "분";
-        }
-        else
-            return clock[2] + "초";
-    }
-
-    public void SetReCommentCount(int recomment_count)
-    {
-        if(Btn_express_answer.gameObject.activeSelf == false && Btn_blind_anser.gameObject.activeSelf == false)
-        {
-            express_answer_list.text = "... 답글" + recomment_count + "개 모두 보기";
-            Btn_express_answer.gameObject.SetActive(true);
-        }
-        else
-            express_answer_list.text = "... 답글" + recomment_count + "개 모두 보기";
-
-        contents.text = string.Empty;
-    }
-
-    public void SetRecommment()
-    {
-        if (recommentstate)
-        {
-            contents.text = "@" + thiscomment.user_nickname + " ";
-            if (parent_comment_ID != 0)
-            {
-                RootCommentItemManagement.parent_top_comment_id = thiscomment.top_comment_id;
-            }
-            else
-            {
-                RootCommentItemManagement.parent_top_comment_id = thiscomment.comment_id;
-            }
-            RootCommentItemManagement.comment_location_state = !recommentstate;
         }
         else
         {
-            contents.text = string.Empty;
-            RootCommentItemManagement.comment_location_state = !recommentstate;
-            Debug.Log("연타로 나오면 중복");
+            HorizontalPadding.padding.left = 0;
+            _parentIndex = _reply.id;
+            gameObject.SetActive(true);
         }
-        recommentstate = recommentstate == true ? false : true;
-    }
-    private void OnClickProfileORNickname()
-    {
-        // 다이어리 페이지 출력 연결
-        Debug.Log("다이어리");
-    }
-    private void OnClickExpressAnswerList()
-    {
-        RootCommentItemManagement.SetRcommentDIsplay(thiscomment.comment_id, true);
-        recommentactivestate = true;
-        Btn_express_answer.gameObject.SetActive(false);
-        Btn_blind_anser.gameObject.SetActive(true);
+        //세팅
+        if (_reply.like_yn)
+            Img_Like.color = Color.red;
+        else
+            Img_Like.color = Color.gray;
         LayoutRebuilder.ForceRebuildLayoutImmediate(gameObject.GetComponent<RectTransform>());
     }
-    private void OnClickBlindAnserList()
+    void SetListener()
     {
-        RootCommentItemManagement.SetRcommentDIsplay(thiscomment.comment_id, false);
-        recommentactivestate = false;
-        Btn_blind_anser.gameObject.SetActive(false);
-        Btn_express_answer.gameObject.SetActive(true);
-        LayoutRebuilder.ForceRebuildLayoutImmediate(gameObject.GetComponent<RectTransform>());
-    }
-    private void OnClickWriteRecomment()
-    {
-        // 국문 키패드 활성화
-        Debug.Log("중복클릭 방지");
-        SetRecommment();
-    }
-    private void OnClickLike()
-    {
-        like_count--;
-        like_Text.text = "좋아요 " + like_count.ToString();
-        
-        thiscomment.bool_like = false;
-        if (like_count <= 0)
-        {
-            like_Text.gameObject.SetActive(false);
-            LayoutRebuilder.ForceRebuildLayoutImmediate(gameObject.GetComponent<RectTransform>());
-        }
-        Btn_unlike.gameObject.SetActive(true);
-        Btn_like.gameObject.SetActive(false);
-    }
-    private void OnClickUnLike()
-    {
-        like_count++;
-        like_Text.text = "좋아요 " + like_count.ToString();
+        Utility.SetEventtrigger(Text_nickname.gameObject, OnClickNickname, EventTriggerType.PointerClick);
+        Utility.SetEventtrigger(Text_moreComment.gameObject, OnClickMoreComment, EventTriggerType.PointerClick);
+        Utility.SetEventtrigger(Img_Like.gameObject, OnClickLike, EventTriggerType.PointerClick);
 
-        thiscomment.bool_like = true;
-        like_Text.gameObject.SetActive(true);
-        Btn_like.gameObject.SetActive(true);
-        Btn_unlike.gameObject.SetActive(false);
-        LayoutRebuilder.ForceRebuildLayoutImmediate(gameObject.GetComponent<RectTransform>());
+        Btn_nestedReply.onClick.AddListener(OnClicknestedReply);
+        Btn_report.onClick.AddListener(OnClickReport);
+        Btn_delete.onClick.AddListener(OnClickDelete);
     }
-    private void OnClickReport()
+
+    void OnClickNickname()
     {
-        // 신고하기 창 활성화
+        Debug.Log("닉네임누름");
     }
-    private void OnClickDelete()
+    void OnClickMoreComment()
     {
-        comment.text = "삭제된 답글입니다.";
-        Btn_like.gameObject.SetActive(false);
-        Btn_unlike.gameObject.SetActive(false);
-        like_Text.gameObject.SetActive(false);
-        Btn_writerecomment.gameObject.SetActive(false);
-        Btn_Delete.gameObject.SetActive(false);
-        // 관리자가 클릭할 경우 "관리자가 삭제한 답글입니다." 표시
+        int start_index = nestedItemList_Display_Index - 1;
+        int end_index = nestedItemList_Display_Index - 4;
+        for(int i = start_index; i >= end_index; i--)
+        {
+            nestedItemList[i].gameObject.SetActive(true);
+            nestedItemList_Display_Index--;
+        }
+    }
+    void OnClickLike()
+    {
+        if(_reply.like_yn)
+        {
+            _reply.like_yn = false;
+            Img_Like.color = Color.gray;
+        }
+        else
+        {
+            _reply.like_yn = true;
+            Img_Like.color = Color.red;
+        }
+    }
+    void OnClickReport()
+    {
+        Debug.Log("신고하기누름");
+    }
+    void OnClickDelete()
+    {
+        Text_context.text = "삭제된 답글입니다.";
+        Img_Like.gameObject.SetActive(false);
+        Text_likecount.gameObject.SetActive(false);
+        Text_moreComment.gameObject.SetActive(false);
+    }
+    void OnClicknestedReply()
+    {
+        if (_parentIndex != 0)
+        {
+            postview.SetNestedReply(_reply.nickname, _reply.id, _parentIndex);
+        }
+        else
+        {
+            postview.SetNestedReply(_reply.nickname, _reply.id, _reply.top_comment_id);
+        }
     }
 }
