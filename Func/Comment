@@ -37,7 +37,6 @@ public class Comment : MonoBehaviour
     public CommunityInfo.reply thiscomment;
     private int parent_comment_ID;
     private short like_count;
-    public bool recommentstate = true;
     public bool recommentactivestate = false;
 
     private void Init()
@@ -138,10 +137,10 @@ public class Comment : MonoBehaviour
     {
         string mention = "@" + thiscomment.nickname + " ";
 
-        if(parent_comment_ID != 0)
-            RootCommentItemManagement.SetRecommentBase(mention, thiscomment.top_comment_id);
+        if (parent_comment_ID != 0)
+            RootCommentItemManagement.SetRecommentLocation(mention, thiscomment.top_comment_id);
         else
-            RootCommentItemManagement.SetRecommentBase(mention, thiscomment.id);
+            RootCommentItemManagement.SetRecommentLocation(mention, thiscomment.id);
     }
     private void OnClickProfileORNickname()
     {
