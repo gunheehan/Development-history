@@ -9,6 +9,7 @@ public class ChatItem : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     [HideInInspector] public int chat_num;
     [HideInInspector] public string chat_sender;
     [HideInInspector] public string chat_message;
+    [HideInInspector] public ChatMessage.Message_Role item_message_role;
     [SerializeField] ChatMessage chatMessage;
     public Text Chat_Text;
     public Button Btn_ChatMassage;
@@ -18,15 +19,28 @@ public class ChatItem : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     private bool isClick;
     private bool islongpress = false;
 
-    public void SetChatData(string chat_sender, string message)
+    public void SetChatData(string chat_sender, string message, ChatMessage.Message_Role message_role = ChatMessage.Message_Role.Defalut)
     {
         this.chat_sender = chat_sender;
         this.chat_message = message;
+        if(message_role != ChatMessage.Message_Role.Defalut)
+            this.item_message_role = message_role;    
     }
 
     void OnEnable()
     {
         Chat_Text.text = chat_message;
+        if (item_message_role == ChatMessage.Message_Role.Notice)
+            Chat_Text.color = Color.red;
+
+        else if (item_message_role == ChatMessage.Message_Role.Alarm)
+            Chat_Text.color = Color.blue;
+
+        else if (item_message_role == ChatMessage.Message_Role.Event)
+            Chat_Text.color = Color.green;
+
+        else if (item_message_role == ChatMessage.Message_Role.Player)
+            Chat_Text.color = Color.white;
     }
     void FixedUpdate()
     {
