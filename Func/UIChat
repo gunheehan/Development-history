@@ -193,7 +193,7 @@ public class UIChat : AddressableUI, IChatClientListener
     public void OnSubscribed(string[] channels, bool[] results)
     {
         Debug.Log(string.Format("채널 입장 ({0})", string.Join(",", channels)));
-        string system_message = string.Format("채널 입장 ({0})", string.Join(",", channels));
+        string system_message = "※ 상대방에게 불쾌감을 줄 수 있는 말은 삼가해주세요.";
         string channel = string.Format("{0}", channels);
         ChatItem newchenneldata = new ChatItem();
         newchenneldata.SetChatData("System", system_message);
