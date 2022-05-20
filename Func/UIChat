@@ -4,7 +4,6 @@ using Photon.Pun;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public class UIChat : AddressableUI, IChatClientListener
@@ -33,7 +32,12 @@ public class UIChat : AddressableUI, IChatClientListener
     string appId;
     ChatClient chatClient;
 
-    public string username;
+    [Header("Chennel Item")]
+    [SerializeField] GameObject channel_itme_prefab;
+    [SerializeField] RectTransform channel_parent;
+    [SerializeField] ChatMessageChannelItem channel_item;
+
+    [HideInInspector] public string username;
 
     private void Awake()
     {
@@ -148,10 +152,19 @@ public class UIChat : AddressableUI, IChatClientListener
         ChatChannel.Add("test");
         ChatChannel.Add("Community");
         ChatClient.Subscribe(ChatChannel.ToArray());
-        chatMessage.CurentChannel = ChatChannel[0];
-        chatMessage.CurentChannel_text.text = "채널 " + ChatChannel[0];
+        SetChannelItem();
     }
+    void SetChannelItem()
+    {
+        for (int i = 0; i < ChatChannel.Count; i++)
+        {
+            ChatMessageChannelItem newchannel = Instantiate(channel_item, channel_parent).GetComponent<ChatMessageChannelItem>();
+            newchannel.SetChannelButton(ChatChannel[i]);
+            if (i == 0)
+                chatMessage.SetChannel(ChatChannel[i],newchannel);
+        }
 
+    }
     #region PhotonChatCallBack
     public void DebugReturn(DebugLevel level, string message)
     {
