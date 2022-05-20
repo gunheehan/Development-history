@@ -47,6 +47,14 @@ public class ChatMessage : MonoBehaviour
     bool Long_Press_Callback_State = false;
     Action MessageLoad;
 
+    public enum Message_Role
+    {
+        Notice,
+        Alarm,
+        Event,
+        Player,
+        Defalut
+    }
     private void Awake()
     {
         ChatItem_Circle_Queue = new ChatItem[ChatItem_Queue_Size];
@@ -242,7 +250,7 @@ public class ChatMessage : MonoBehaviour
                     {
                         ChatItem_Circle_Queue[chatitem_index_front] = PopChatMessagePool().GetComponent<ChatItem>();
                         ChatItem_Circle_Queue[chatitem_index_front].chat_num = newMessage.chat_num;
-                        ChatItem_Circle_Queue[chatitem_index_front].SetChatData(newMessage.chat_sender, newMessage.chat_message);
+                        ChatItem_Circle_Queue[chatitem_index_front].SetChatData(newMessage.chat_sender, newMessage.chat_message, newMessage.item_message_role);
                     }
                     ChatItem_Circle_Queue[chatitem_index_front].gameObject.SetActive(false);
                     ChatItem_Circle_Queue[chatitem_index_front].gameObject.transform.SetAsLastSibling();
@@ -257,7 +265,7 @@ public class ChatMessage : MonoBehaviour
             }
             ChatItem_Circle_Queue[chatitem_index_rear] = PopChatMessagePool().GetComponent<ChatItem>();
             ChatItem_Circle_Queue[chatitem_index_rear].chat_num = newMessage.chat_num;
-            ChatItem_Circle_Queue[chatitem_index_rear].SetChatData(newMessage.chat_sender, newMessage.chat_message);
+            ChatItem_Circle_Queue[chatitem_index_rear].SetChatData(newMessage.chat_sender, newMessage.chat_message, newMessage.item_message_role);
             ChatItem_Circle_Queue[chatitem_index_rear].gameObject.transform.SetAsLastSibling();
             ChatItem_Circle_Queue[chatitem_index_rear].gameObject.SetActive(true);
             LayoutRebuilder.ForceRebuildLayoutImmediate(MessageParent.gameObject.GetComponent<RectTransform>());
@@ -296,7 +304,7 @@ public class ChatMessage : MonoBehaviour
 
                 ChatItem_Circle_Queue[back_num] = PopChatMessagePool().GetComponent<ChatItem>();
                 ChatItem_Circle_Queue[back_num].chat_num = channel_text_list[load_num_index].chat_num;
-                ChatItem_Circle_Queue[back_num].SetChatData(channel_text_list[load_num_index].chat_sender, channel_text_list[load_num_index].chat_message);
+                ChatItem_Circle_Queue[back_num].SetChatData(channel_text_list[load_num_index].chat_sender, channel_text_list[load_num_index].chat_message, channel_text_list[load_num_index].item_message_role);
                 ChatItem_Circle_Queue[back_num].gameObject.SetActive(true);
             }
         }
@@ -325,7 +333,7 @@ public class ChatMessage : MonoBehaviour
 
                 ChatItem_Circle_Queue[front_num] = PopChatMessagePool().GetComponent<ChatItem>();
                 ChatItem_Circle_Queue[front_num].chat_num = channel_text_list[load_num_index].chat_num;
-                ChatItem_Circle_Queue[front_num].SetChatData(channel_text_list[load_num_index].chat_sender, channel_text_list[load_num_index].chat_message);
+                ChatItem_Circle_Queue[front_num].SetChatData(channel_text_list[load_num_index].chat_sender, channel_text_list[load_num_index].chat_message, channel_text_list[load_num_index].item_message_role);
                 ChatItem_Circle_Queue[front_num].gameObject.SetActive(true);
             }
             load_num_index++;
