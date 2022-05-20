@@ -181,7 +181,7 @@ public class UIChat : AddressableUI, IChatClientListener
         {
             ChatItem newchenneldata = new ChatItem();
             string message = messages[i] as string;
-            newchenneldata.SetChatData(senders[i], "[" + senders[i] + "] :" + message);
+            newchenneldata.SetChatData(senders[i], "[" + senders[i] + "] :" + message, ChatMessage.Message_Role.Player);
             chatMessage.MessageClassification(channelName, newchenneldata);
         }
     }
@@ -196,7 +196,7 @@ public class UIChat : AddressableUI, IChatClientListener
         string system_message = "※ 상대방에게 불쾌감을 줄 수 있는 말은 삼가해주세요.";
         string channel = string.Format("{0}", channels);
         ChatItem newchenneldata = new ChatItem();
-        newchenneldata.SetChatData("System", system_message);
+        newchenneldata.SetChatData("System", system_message, ChatMessage.Message_Role.Notice);
         chatMessage.MessageClassification(channel, newchenneldata);
     }
 
