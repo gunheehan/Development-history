@@ -1,0 +1,29 @@
+using UnityEngine;
+using UnityEngine.UI;
+
+public class ChatMessageChannelItem : MonoBehaviour
+{
+    public Button Btn_Channel;
+    [SerializeField] Text Text_ChannelName;
+    [SerializeField] ChatMessage message_channel;
+    // Start is called before the first frame update
+    void Start()
+    {
+        Btn_Channel.onClick.AddListener(OnClickChennel);
+    }
+    public void SetChannelButton(string channelname)
+    {
+        Btn_Channel.image.color = Color.gray;
+        Text_ChannelName.text = channelname;
+        gameObject.SetActive(true);
+    }
+    public void OnClickChennel()
+    {
+        Btn_Channel.image.color = Color.white;
+
+        if (Text_ChannelName.text != message_channel.CurentChannel)
+        {
+            message_channel.ChannelChange(Text_ChannelName.text, this);
+        }
+    }
+}
